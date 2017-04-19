@@ -23,7 +23,7 @@ import time
 #---------------------------------------------------------------------------------------#
 def Gnowee(func,lb,ub,S):
     """
-    Main program for the HMO optimization. 
+    Main program for the Gnowee optimization. 
     
     Parameters
     ==========
@@ -64,7 +64,7 @@ def Gnowee(func,lb,ub,S):
         np.random.seed(42)
     
     #Initialize population with random initial solutions
-    init=sm.Initial_Samples(lb,ub,S.s,S.p,S.d)
+    init=sm.Initial_Samples(lb,ub,S.s,S.p)
     for p in range(0,S.p,1):
         pop.append(util.Parent(5E20,init[p]))  
     if S.d:
@@ -148,7 +148,7 @@ def Levy_Flight(pop,lb,ub,S):
     children=[] # Local copy of children generated
             
     # Determine step size using Levy Flight
-    step=sm.Levy(len(pop[0].d),len(pop),alpha=S.a,gamma=S.g,n=S.n,debug=S.d) 
+    step=sm.Levy(len(pop[0].d),len(pop),alpha=S.a,gamma=S.g,n=S.n) 
     if S.d:
         print "\nIn function Levy_Flight,"
         print "The steps are:", step

@@ -268,7 +268,7 @@ def Simple_Bounds(tmp,lb,ub,debug=False,change_count=0):
     return tmp
 
 #---------------------------------------------------------------------------------------# 
-def Rejection_Bounds(nests,new_nests,stepsize,lb,ub,S,debug=False,change_count=0):
+def Rejection_Bounds(nests,new_nests,lb,ub,debug=False,change_count=0):
     """
     Application of problem boundaries to generated solutions
    

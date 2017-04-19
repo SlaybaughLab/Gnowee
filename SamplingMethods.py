@@ -6,7 +6,7 @@
 #
 # Author : James Bevins
 #
-# Last Modified: 8Oct15
+# Last Modified: 23Nov16
 #
 #######################################################################################################
 
@@ -22,8 +22,9 @@ import math
 import argparse
 import random
 from pyDOE import *
+
 #---------------------------------------------------------------------------------------#
-def Initial_Samples(lb,ub,method,n=25,debug=False):  
+def Initial_Samples(lb,ub,method,n=25):  
     """
     Generate a set of samples in a given phase space
    
@@ -40,9 +41,6 @@ def Initial_Samples(lb,ub,method,n=25,debug=False):
     ========   
     n : int
         The number of samples to be generated.  Ignored for nolh algorithms. (Default=25)
-    debug : boolean
-        If True, progress statements will be displayed every iteration
-        (Default: False)
    
     Returns
     =======
@@ -60,9 +58,6 @@ def Initial_Samples(lb,ub,method,n=25,debug=False):
             s=np.zeros((n,len(lb)))
             for i in range(0,n,1):
                 s[i,:]=(lb+(ub-lb)*np.random.rand(len(lb)))  
-            if debug:
-                print 'Initial Samples:' 
-                print s 
             break
         # Standard nearly-orthoganal latin hypercube call   
         if case('nolh'):
@@ -112,7 +107,7 @@ def Initial_Samples(lb,ub,method,n=25,debug=False):
     return s
 
 #---------------------------------------------------------------------------------------#
-def Plot_Samples(s,debug=False):  
+def Plot_Samples(s):  
     """
     Plot the first 2 and 3 dimensions on the sample distribution.  
    
@@ -123,9 +118,6 @@ def Plot_Samples(s,debug=False):
    
     Optional
     ========
-    debug : boolean
-        If True, progress statements will be displayed every iteration
-        (Default: False)
    
     Returns
     =======
@@ -144,7 +136,7 @@ def Plot_Samples(s,debug=False):
     return
 
 #---------------------------------------------------------------------------------------#
-def Levy(nc,nr=0,alpha=1.5,gamma=1,n=1,debug=False):
+def Levy(nc,nr=0,alpha=1.5,gamma=1,n=1):
     """
     Generate Levy flights steps
    
@@ -164,9 +156,6 @@ def Levy(nc,nr=0,alpha=1.5,gamma=1,n=1,debug=False):
         Gamma - Scale unit of process for Levy flights (Default: 1)
     n : integer
         Number of independent variables - can be used to reduce Levy flight variance (Default: 1)
-    debug : boolean
-        If True, progress statements will be displayed every iteration
-        (Default: False)
    
     Returns
     =======
@@ -203,39 +192,33 @@ def Levy(nc,nr=0,alpha=1.5,gamma=1,n=1,debug=False):
         z=z.reshape(nr,nc)
     else:
         z=z.reshape(nc)
-          
-    if debug:
-        print "In Levy flight algorithm:" 
-        print "1/alpha: %f" %invalpha
-        print "X Standard Deviation: %f" %sigx
-        print "K(alpha): %f" %kappa
-        print "C(alpha): %f" %c
 
     return z  
 
 #---------------------------------------------------------------------------------------#
-def TLF(alpha=1.5,gamma=1.,num_samp=1,cut_point=10.,debug=False):
+def TLF(numRow=1,numCol=1,alpha=1.5,gamma=1.,cut_point=10.):
     
     """
-    Plots the comparison of the TLF to the Levy distribution
+    Samples from a truncated Levy flight distribution (TLF) according to Manegna, "Stochastic Process 
+    with Ultraslow Convergence to a Gaussian: The Truncated Levy Flight" to map a levy distribution onto
+    the interval [0,1].
    
     Parameters
     ==========
   
     Optional
     ========   
+    numRow : integer
+        Number of rows of Levy flights to sample (Default: 1)
+    numCol : integer
+        Number of columns of Levy flights to sample (Default: 1)
     alpha : scalar
         Levy exponent - defines the index of the distribution and controls scale properties of the stochastic process
         (Default: 1.5)
     gamma : scalar
         Gamma - Scale unit of process for Levy flights (Default: 1.)
-    num_samp : integer
-        Number of Levy flights to sample (Default: 1)
     cut_point : scalar
         Point at which to cut sampled Levy values and resample
-    debug : boolean
-        If True, progress statements will be displayed every iteration
-        (Default: False)
    
     Returns
     =======
@@ -243,17 +226,14 @@ def TLF(alpha=1.5,gamma=1.,num_samp=1,cut_point=10.,debug=False):
         Array representing the levy flights on the interval (0,1)
     """
     
-    # Draw num_samp samples from the Levy distribution
-    levy=abs(Levy(1,num_samp)/cut_point).reshape(num_samp)
-    
-    if debug==True:
-        print "Prior to resampling, the maximum sampled value is:", np.max(levy)
-        print (levy>1.0).sum()/num_samp,"% of the samples are above the cut point."
+    # Draw numRow x numCol samples from the Levy distribution
+    levy=abs(Levy(numRow,numCol)/cut_point).reshape(numRow,numCol)
     
     # Resample values above the range (0,1)
     for i in range(len(levy)):
-        while levy[i]>1:
-            levy[i]=abs(Levy(1,1)/cut_point).reshape(1)
+        for j in range(len(levy[i])):
+            while levy[i,j]>1:
+                levy[i,j]=abs(Levy(1,1)/cut_point).reshape(1)
             
     return levy
 
@@ -379,7 +359,7 @@ if __name__ == "__main__":
     print(nolh(conf=args.conf, remove=args.remove))
 
 #---------------------------------------------------------------------------------------#  
-def Get_CDR_Permutations(dim,debug=False):  
+def Get_CDR_Permutations(dim):  
     """
     Generate a set of samples in a given phase space
    
@@ -387,12 +367,6 @@ def Get_CDR_Permutations(dim,debug=False):
     ==========
     dim : integer
         The dimension of the phase space
-   
-    Optional
-    ========   
-    debug : boolean
-        If True, progress statements will be displayed every iteration
-        (Default: False)
    
     Returns
     =======

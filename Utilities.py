@@ -269,7 +269,8 @@ def Simple_Bounds(tmp,lb,ub,debug=False,change_count=0):
 #---------------------------------------------------------------------------------------# 
 def Rejection_Bounds(parent,child,stepsize,lb,ub,S,debug=False,change_count=0):
     """
-    Application of problem boundaries to generated solutions
+    Application of problem boundaries to generated solutions. Adjusts step size for all rejected
+    solutions until within the boundaries.  
    
     Parameters
     ==========
