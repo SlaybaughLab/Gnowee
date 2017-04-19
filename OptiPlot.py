@@ -71,7 +71,7 @@ def Plot_Vars(data,low_bounds=[],up_bounds=[],title=[],label=[],debug=False):
     x=[tmp.g for tmp in data]
     y=[tmp.f for tmp in data]
     ax.plot(x,y, 'ko-')
-    ax.set_ylabel(label[0]) 
+    ax.set_ylabel(label[0],fontsize=15, x=-0.04) 
     
     # Format fitness plot
     ax.axes.get_xaxis().set_visible(False)  
@@ -79,6 +79,7 @@ def Plot_Vars(data,low_bounds=[],up_bounds=[],title=[],label=[],debug=False):
 #    if all(y) > 0:
 #        ax.set_yscale('log')
     ax.set_ylim(min(y),data[2].f)
+    
 
     # Add text stating fmin to plot
     ax.text(0.8, 0.8,'\\textbf{fmin = %f}' %data[-1].f, ha='center', va='center', transform=ax.transAxes)
@@ -106,7 +107,7 @@ def Plot_Vars(data,low_bounds=[],up_bounds=[],title=[],label=[],debug=False):
     # Turn on X axis below final subplot
     ax.axes.get_xaxis().set_visible(True)
     ax.set_xlabel('\\textbf{Generation}',fontsize=15, y=-0.04)
-    plt.yticks(fontsize=14)
+    #plt.yticks(fontsize=14)
     plt.xticks(fontsize=14)  
     
     plt.show()
@@ -118,16 +119,11 @@ def Plot_Hist(data,title=[],xlabel='',ylabel=[],debug=False):
    
     Parameters
     ==========
-    data : list of event objects
-        Contain the optimization history in event objects within the data list
-        Attributes are: generation (.g), function evaluations (.e), fitness (.f), and design (.d)
+    data : list 
+        Contains the number of function evals for each optimization run
    
     Optional
     ========   
-    low_bounds : array
-        The lower bounds of the design variable(s)
-    up_bounds : array
-        The upper bounds of the design variable(s)
     title : string
         Title for plot
         (Default: [])
@@ -176,6 +172,79 @@ def Plot_Hist(data,title=[],xlabel='',ylabel=[],debug=False):
     
     plt.show()
     
+#---------------------------------------------------------------------------------------#       
+def Plot_Hist_Comp(data,data2,data_labels,title='',xlabel='',ylabel=[],debug=False):
+    """
+    Histograms and plots the comparison of two sets of function evaluation data
+   
+    Parameters
+    ==========
+    data : list 
+        Contains the number of function evals for each optimization run
+    data2 : list 
+        Contains the number of function evals for each optimization run
+    data_labels : list 
+        Contains the legend label names for each data set
+   
+    Optional
+    ========   
+    title : string
+        Title for plot
+        (Default: '')
+    xlabel : string
+        Label for independent variable
+        (Default: [])
+    ylabel : list
+        List of names of design variables
+        (Default: [])
+    debug : boolean
+        If True, progress statements will be displayed every iteration
+        (Default: False)
+   
+    Returns
+    =======
+    None, generates plot of design variables vs generation
+   
+    """
+    
+    # Allow use of Tex sybols and set formats
+    plt.rc('text', usetex=True)
+    majorFormatter = FormatStrFormatter('%0.1e')
+
+    # Establish labels for each data set and title for the plot
+    if xlabel=='':
+        xlabel=('\\textbf{# Function Evals}')
+    if ylabel==[]:
+        ylabel=('\\textbf{Probability}')
+    if title=='':
+        title="Histogram of Function Evaluations for Optimization"
+
+    # Plot Histogram
+    iter=len(data)
+    w=np.ones_like(data)/float(iter)
+
+    m_val=max([max(fevals),max(fevals_sa)])
+    bins=np.arange(0,m_val,m.ceil(m_val/100))
+
+    plt.hist(data, bins=bins, weights=w, facecolor='black', histtype='stepfilled', alpha=1.0, label=data_label[0])
+    plt.hist(data2, bins=bins, weights=w, facecolor='grey', histtype='stepfilled', alpha=0.85, label=data_label[1])
+
+    # Plot Labels
+    plt.xlabel('\\textbf{%s}' %xlabel,fontsize=15, y=-01.04)
+    plt.ylabel('\\textbf{%s}' %ylabel,fontsize=15, x=-0.04)
+    plt.title('\\textbf{%s}' %title,fontsize=17, y=1.04)
+    plt.yticks(fontsize=14)
+    plt.xticks(fontsize=14)  
+
+    # Tweak spacing to prevent clipping of ylabel
+    plt.subplots_adjust(left=0.15)
+
+    plt.legend(borderaxespad=0.75, loc=1, fontsize=14, 
+                            handlelength=5, borderpad=0.5, labelspacing=0.75, fancybox=True, 
+                            framealpha=0.5)
+
+    plt.show()
+
 #---------------------------------------------------------------------------------------#   
 def Plot_Feval_Hist(data=[],listdata=[],label=[],debug=False):
     """
