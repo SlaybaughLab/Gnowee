@@ -1,527 +1,625 @@
-#######################################################################################################
-#
-# Module : GnoweeHeuristics.py
-#
-# Heuristics supporting the Gnowee metaheuristic optimization algorithm. 
-#
-# Author : James Bevins
-#
-# Last Modified: 18Apr17
-#
-#######################################################################################################
+"""!
+@file src/GnoweeHeuristics.py
+@package Gnowee
+
+@defgroup GnoweeHeuristics GnoweeHeuristics
+
+@brief Heuristics and settings supporting the Gnowee metaheuristic optimization
+algorithm.
+
+This instantiates the class and methods necessary to perform an optimization
+using the Gnowee algorithm.  Each of the heuristics can also be used
+independently of the Gnowee algorithm by instantiating this class and choosing
+the desired heuristic.
+
+The default settings are those found to be best for a suite of benchmark
+problems but one may find alternative settings are useful for the problem of
+interest based on the fitness landscape and type of variables.
+
+@author James Bevins
+
+@date 8May17
+"""
 
 import numpy as np
 import copy as cp
-import math as m
 
-from scipy.stats import rankdata
-from SamplingMethods import Levy, TLF, Initial_Samples
-from itertools import combinations
-from GnoweeUtilities import Rejection_Bounds, Simple_Bounds, Get_Best
+from math import sqrt
+from numpy.random import rand, permutation
+from Sampling import levy, tlf, initial_samples
+from GnoweeUtilities import rejection_bounds, simple_bounds
 
-#---------------------------------------------------------------------------------------#
-def Initialize(numSamples, sampleMethod, lb, ub, varType):
-    """
-    Initialize a population.
-
-    Parameters
-    ==========
-    numSamples : integer
-        The number of samples to be generated
-    sampleMethod : string
-        The name of the sampling method to be used.  Options are 'random', 'nolh',
-        'nolh-rp', 'nolh-cdr', or 'lhc'.
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varType : array
-        The type of variable for each design parameter.
-
-    Returns
-    =======
-    initSamples : list of arrays
-        The initialized set of samples
-    """
-    initSamples = Initial_Samples(lb, ub, sampleMethod, numSamples)
-    for var in range(len(varType)):
-        if varType[var]=='i' or varType[var]=='d':
-            initSamples[:,var]=np.rint(initSamples[:,var])
-    return initSamples
-#---------------------------------------------------------------------------------------#
-def Disc_Levy_Flight(pop,lb,ub,varID,S):  
-    """
-    Generate new children using Levy flights
-   
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varID : array
-        A truth array indicating the location of the variables to be permuted
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Optional
-    ========   
-   
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
-    used : list
-        A list of the identities of the chosen index for each child
-    """
-    
-    assert len(lb)==len(ub), 'Lower and upper bounds have different #s of design variables in Levy_Flight function.'
-    assert len(lb)==len(pop[0]), 'Bounds and pop have different #s of design variables in Levy_Flight function.' 
-    assert len(lb)==len(varID), 'The bounds size ({}) must be consistent with the size of the variable ID truth vectorin Levy_Flight function.'.format(len(lb),len(varID))
-    assert S.fl>=0 and S.fl <=1, 'The probability that a Levy flight is performed must exist on (0,1]'
-    
-    children=[] # Local copy of children generated
-            
-    # Determine step size using Levy Flight
-    step=TLF(len(pop),len(pop[0]),alpha=S.a,gamma=S.g) 
-    
-    # Initialize Variables
-    feval=0
-    used=[] 
-    for i in range(0,int(S.fl*S.p),1):
-        k=int(np.random.rand()*S.p)
-        while k in used:
-            k=int(np.random.rand()*S.p)
-        used.append(k)
-        children.append(cp.deepcopy(pop[k])) 
-        #print "pre:", children[i][3:]
-        
-        #Calculate Levy flight
-        stepsize=np.round(step[k,:]*varID*(ub-lb))
-        #print "stepsize:", stepsize[3:]
-        if all(stepsize == 0):
-            stepsize=np.round(np.random.rand(len(varID))*(ub-lb))*varID
-            #print "mod stepsize:", stepsize[3:]
-        children[i]=(children[i]+stepsize)%(ub+1-lb)
-        #print "tmp:", children[i][3:]
-        
-        #Build child applying variable boundaries 
-        children[i]=Rejection_Bounds(pop[k],children[i],stepsize,lb,ub,S)  
-        #print "post:", children[i][3:], "\n"
-      
-    return children, used
-
-#---------------------------------------------------------------------------------------#
-def Cont_Levy_Flight(pop,lb,ub,varID,S):
-    """
-    Generate new children from a current population using Levy flights according to the Mantegna algorithm. 
-    Applies rejection boundaries to ensure all solutions lie within the design space.
-   
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varID : array
-        A truth array indicating the location of the variables to be permuted
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
-    used : list
-        A list of the identities of the chosen index for each child
-    """
-    
-    assert len(lb)==len(ub), 'Lower and upper bounds have different #s of design variables in Levy_Flight function.'
-    assert len(lb)==len(pop[0]), 'Bounds and pop have different #s of design variables in Levy_Flight function.' 
-    assert len(lb)==len(varID), 'The bounds size ({}) must be consistent with the size of the variable ID truth vectorin Levy_Flight function.'.format(len(lb),len(varID))
-    assert S.fl>=0 and S.fl <=1, 'The probability that a Levy flight is performed must exist on (0,1]'
-    
-    children=[] # Local copy of children generated
-            
-    # Determine step size using Levy Flight
-    step=Levy(len(pop[0]),len(pop),alpha=S.a,gamma=S.g,n=S.n) 
-    
-    # Perform global search from fl*p parents
-    used=[]
-    for i in range(int(S.fl*S.p)):
-        k=int(np.random.rand()*S.p)
-        while k in used:
-            k=int(np.random.rand()*S.p)
-        used.append(k)
-        children.append(cp.deepcopy(pop[k])) 
-        #print "pre:", children[i][3:]
-        
-        #Calculate Levy flight
-        stepsize=1.0/S.sf*step[k,:]*varID
-        #print "step:", stepsize[3:]
-        children[i]=children[i]+stepsize 
-        #print "post:", children[i][3:], "\n"
-        
-        #Build child applying variable boundaries 
-        children[i]=Rejection_Bounds(pop[k],children[i],stepsize,lb,ub,S) 
-        
-    return children, used
-
-#---------------------------------------------------------------------------------------#
-def ScatterSearch(pop,lb,ub,varID,S,intDiscID=[]):  
-    """
-    Generate new designs by using inver-over on combinatorial variables.  Adapted from ideas in
-    Tao. "Iver-over Operator for the TSP"
-   
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varID : array
-        A truth array indicating the location of the variables to be permuted
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Optional
-    ========   
-    intDiscID : array
-        A truth array indicating the location of the discrete and integer variables to be permuted
-   
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
-    used : list
-        A list of the identities of the chosen index for each child
-    """
-    
-    assert len(lb)==len(ub), 'Lower and upper bounds have different #s of design variables in Cont_Crossover function.'
-    assert len(lb)==len(pop[0]), 'Bounds and pop have different #s of design variables in Cont_Crossover function.' 
-    assert len(lb)==len(varID), 'The bounds size ({}) must be consistent with the size of the variable ID truth vector in Crossover function.'.format(len(lb),len(varID))
-    
-    # If no discretes variables exist, set ID array to zero
-    if len(intDiscID) != len(varID):
-        intDiscID=np.zeros_like(varID)
-        
-    # Use scatter search to generate candidate children solutions    
-    children=[]
-    used=[]
-    for i in range(0,int(len(pop)*S.fe),1):        
-        #Randomly choose starting parent #2  
-        j=int(np.random.rand()*len(pop))     
-        while j==i or j in used:
-            j=int(np.random.rand()*len(pop))
-        used.append(i)
-       
-        #print "pre1:", pop[i][3:]
-        #print "pre2:", pop[j][3:]
-        d=(pop[j]-pop[i])/2.0
-        if i<j:
-            alpha=1
-        else:
-            alpha=-1
-        beta=(abs(j-i)-1)/(len(pop)-2)
-        c1=pop[i]-d*(1+alpha*beta)
-        c2=pop[i]+d*(1-alpha*beta)
-        tmp=c1+(c2-c1)*np.random.rand(len(pop[i]))
-        #print "step:", tmp[3:]
-        
-        # Enforce integer and discrete constraints, if present
-        tmp=tmp*varID+np.round(tmp*intDiscID)
-        #print "tmp:", tmp[3:]
-        
-        #Build child applying variable boundaries 
-        children.append(Simple_Bounds(tmp,lb,ub))
-        #print "post:", children[i][3:], "\n"
-            
-    return children, used
-
-#---------------------------------------------------------------------------------------#
-def ScatterSearch2(funct,pop,lb,ub,varID,timeline,S,discreteID=[],discreteMap=[[]],intDiscID=[]):  
-    """
-    Generate new designs by using inver-over on combinatorial variables.  Adapted from ideas in
-    Tao. "Iver-over Operator for the TSP"
-   
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varID : array
-        A truth array indicating the location of the variables to be permuted
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Optional
-    ========   
-    intDiscID : array
-        A truth array indicating the location of the discrete and integer variables to be permuted
-   
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
-    """
-    
-    assert len(lb)==len(ub), 'Lower and upper bounds have different #s of design variables in Cont_Crossover function.'
-    assert len(lb)==len(pop[0].d), 'Bounds and pop have different #s of design variables in Cont_Crossover function.' 
-    assert len(lb)==len(varID), 'The bounds size ({}) must be consistent with the size of the variable ID truth vector in Crossover function.'.format(len(lb),len(varID))
-    
-    # If no discretes variables exist, set ID array to zero
-    if len(intDiscID) != len(varID):
-        intDiscID=np.zeros_like(varID)
-         
-    # Chose subpopulation and sort according to fitness
-    dim=3
-    perm=(np.random.permutation(range(S.p-dim))+dim)
-    ind=[i for i in range(dim)]+[perm[i] for i in range(dim)]
-    parents=[pop[i].d for i in ind]    
-    ind, parents = (list(t) for t in zip(*sorted(zip(ind, parents))))
-    
-    # Determine the number of permutations and each index of the poulation to create the permutation
-    nComb=[i for i in combinations(range(dim*2), 2)]
-    ind1=np.array([i[0] for i in nComb])
-    ind2=np.array([i[1] for i in nComb])
-    mapComb=[i for i in combinations(ind, 2)]
-    map1=np.array([i[0] for i in mapComb])
-    map2=np.array([i[1] for i in mapComb])
-    childToParentMap=np.concatenate((map1,map2),axis=0)    
-    
-    # Weight according to the relative difference between solution quality
-    weight=0.75*((ind2-ind1)-1)/(len(parents)-2)+1
-    weight=np.array([weight,]*3).transpose()
-    
-    # Check to ensure that there is sufficient diversity
-    p1=np.array([parents[i] for i in ind1])
-    p2=np.array([parents[i] for i in ind2])
-    denom=np.maximum(p1,p2)
-    delta=(p1-p2)/denom
-    
-    #!!!!!!!
-    if delta.all()<0.001:
-        import SamplingMethods as sm
-        pop[-1].d=sm.Initial_Samples(lb,ub,'random',1)[0]
-        pop[-1].f=1E99
-        pop[-1].c=0
-        (tmp,ch,timeline)=Get_Best(funct,[pop[-1]],[pop[-1].d],lb,ub,timeline,S,0,discreteID=discreteID, discreteMap=discreteMap)
-        pop[-1].f=tmp[0].f
-    # Calculate the step and individual vectors
-    step=weight*(p1-p2)/1.5
-    v1=p1-step
-    v2=p2-step
-    v3=2*p2-p1-step
-    
-    for i in range(len(v1)):
-        for j in range(len(v1[i])):
-            rand1=np.random.rand()
-            rand3=np.random.rand()
-            if v1[i,j]<lb[j] and rand1 < 0.5:
-                v1[i,j]=lb[j]
-            if v1[i,j]<ub[j] and rand1 < 0.5:
-                v1[i,j]=ub[j]
-            if v3[i,j]<lb[j] and rand3 < 0.5:
-                v3[i,j]=lb[j]
-            if v3[i,j]<ub[j] and rand3 < 0.5:
-                v3[i,j]=ub[j]
-    
-    # Create candidate children
-    c1=v1+(v2-v1)*np.random.rand(len(ind1),len(lb))
-    c2=v2+(v3-v2)*np.random.rand(len(ind1),len(lb))
-    children=np.concatenate((c1,c2),axis=0)
-        
-    # Use scatter search to generate candidate children solutions
-    changes=0
-    for i in range(0,len(children)):        
-        # Enforce integer and discrete constraints, if present
-        children[i]=children[i]*varID+np.round(children[i]*intDiscID)
-        
-        #Build child applying variable boundaries 
-        children[i]=Simple_Bounds(children[i],lb,ub)
-        
-        (tmp,ch,timeline)=Get_Best(funct,[cp.deepcopy(pop[childToParentMap[i]])],[children[i]],lb,ub, timeline,S,0,discreteID=discreteID, discreteMap=discreteMap)
-        if ch>0:
-            pop[childToParentMap[i]]=cp.deepcopy(tmp[0])
-            changes+=ch
-            
-    return children, changes, timeline
-
-#---------------------------------------------------------------------------------------#
-def Crossover(pop,S):  
-    """
-    Generate new designs by using inver-over on combinatorial variables.  Adapted from ideas in
-    Tao. "Iver-over Operator for the TSP"
-   
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
+#------------------------------------------------------------------------------#
+class GnoweeHeuristics(object):
+    """!
+    @ingroup GnoweeHeuristics
+    The class is the foundation of the Gnowee optimization algorithm.  It sets
+    the settings required for the algorithm and defines the heurstics.
     """
 
-    children=[]
-        
-    feval=0
-    for i in range(0,int(len(pop)*S.fe),1):        
-        #Randomly choose starting parent #2  
-        rand=int(np.random.rand()*len(pop))     
-        while rand==i:
-            rand=int(np.random.rand()*len(pop))
-        
-        # Randomly choose crossover point
-        r=int(np.random.rand()*len(pop[i]))
-        if np.random.rand()<0.5:
-            children.append(np.array(pop[i][0:r+1].tolist()+pop[rand][r+1:].tolist()))
-        else:
-            children.append(np.array(pop[rand][0:r+1].tolist()+pop[i][r+1:].tolist()))
-            
-    return children
+    ##
+    def __init__(self, population=25, initSampling='lhc', fracDiscovered=0.2,
+                 fracElite=0.2, fracLevy=0.2, alpha=1.5, gamma=1, n=1,
+                 scalingFactor=10.0, penalty=0.0, maxGens=20000,
+                 fevalMax=200000, convTol=1e-6, stallIterLimit=225,
+                 optimalFitness=0, optConvTol=1e-2):
+        """!
+        Constructor to build the GnoweeHeuristics class.
 
-#---------------------------------------------------------------------------------------#
-def Cont_Crossover(pop,lb,ub,varID,S,intDiscID=[]):  
-    """
-    Generate new children using distance based crossover strategies on the top parent.  
-    Ideas adapted from Walton "Modified Cuckoo Search: A New Gradient Free Optimisation Algorithm" 
-    and Storn "Differential Evolution - A Simple and Efficient Heuristic for Global Optimization over Continuous Spaces"
-   
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varID : array
-        A truth array indicating the location of the variables to be permuted
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Optional
-    ========   
-    intDiscID : array
-        A truth array indicating the location of the discrete and integer variables to be permuted
-   
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
-    used : list
-        A list of the identities of the chosen index for each child
-    """
-    
-    assert len(lb)==len(ub), 'Lower and upper bounds have different #s of design variables in Cont_Crossover function.'
-    assert len(lb)==len(pop[0]), 'Bounds and pop have different #s of design variables in Cont_Crossover function.' 
-    assert len(lb)==len(varID), 'The bounds size ({}) must be consistent with the size of the variable ID truth vector in Cont_Crossover function.'.format(len(lb),len(varID))
-    assert 0<=S.fe<=1, 'fe must be between 0 and 1 inclusive in Elite_Crossover function.'
-    
-    # If no discretes variables exist, set ID array to zero
-    if len(intDiscID) != len(varID):
-        intDiscID=np.zeros_like(varID)
-    
-    # Initialize variables
-    golden_ratio=(1.+m.sqrt(5))/2.  # Used to bias distance based mutation strategies
-    feval=0
-    dx=np.zeros_like(pop[0])
-    
-    # Crossover top parent with an elite parent to speed local convergence
-    children=[]
-    used=[]
-    for i in range(0,int(S.fe*len(pop)),1):
-        r=int(np.random.rand()*S.p)
-        while r in used or r==i:
-            r=int(np.random.rand()*S.p)
-        used.append(i)
-        
-        children.append(cp.deepcopy(pop[r]))
-        #print "pre:", children[i][3:]
-        dx=abs(pop[i]-children[i])/golden_ratio
-        #print "dx:", dx[3:]
-        children[i]=children[i]+dx*varID+np.round(dx*intDiscID)
-        #print "tmp:", children[i][3:]
-        children[i]=Simple_Bounds(children[i],lb,ub)
-        #print "post:", children[i][3:], "\n"
-        
-    return children, used
+        The default settings are
+        found to be optimized for a wide range of problems, but can be changed
+        to optimize performance for a particular problem type or class.  For
+        more details, refer to the benchmark code in the development branch of
+        the repo or <insert link to paper>.
 
-#---------------------------------------------------------------------------------------#               
-def Mutate(pop,lb,ub,varID,S,intDiscID=[]):
-    """
-    Generate new children by adding a weighted difference between two population vectors
-    to a third vector.  Ideas adapted from Storn, "Differential Evolution - A Simple and
-    Efficient Heuristic for Global Optimization over Continuous Spaces" and Yang, "Nature
-    Inspired Optimmization Algorithms"
-    
-    Parameters
-    ==========
-    pop : list of arrays
-        The current parent sets of design variables representing system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varID : array
-        A truth array indicating the location of the variables to be permuted
-    S : Object    
-        An object representing the settings for the optimization algorithm
-   
-    Optional
-    ========   
-    intDiscID : array
-        A truth array indicating the location of the discrete and integer variables to be permuted
-    
-    Returns
-    =======
-    children : list of arrays
-        The proposed children sets of design variables representing new system designs
-    """
-    
-    assert len(pop[0])==len(lb), 'Pop and best have different #s of design variables in Mutate function.'
-    assert len(lb)==len(ub), 'Lower and upper bounds have different #s of design variables in Mutate function.'
-    assert len(lb)==len(varID), 'The bounds size ({}) must be consistent with the size of the variable ID truth vector in Mutate function.'.format(len(lb),len(varID))
-    assert S.fd>=0 and S.fd <=1, 'The probability that a pop is discovered must exist on (0,1]'
-    
-    children=[]
-            
-    # If no discretes variables exist, set ID array to zero
-    if len(intDiscID) != len(varID):
-        intDiscID=np.zeros_like(varID)
-        
-    #Discover (1-fd); K is a status vector to see if discovered
-    K=np.random.rand(len(pop),len(pop[0]))>S.fd
-        
-    #Bias the discovery to the worst fitness solutions
-    childn1=cp.copy(np.random.permutation(pop))
-    childn2=cp.copy(np.random.permutation(pop)) 
-        
-    #New solution by biased/selective random walks
-    r=np.random.rand()
-    for j in range(0,len(pop),1):
-        n=np.array((childn1[j]-childn2[j]))
-        #print "pre:", pop[j][3:]
-        step_size=r*n*varID+(n*intDiscID).astype(int)
-        #print "step:", step_size[3:]
-        tmp=(pop[j]+step_size*K[j,:])*varID+(pop[j]+step_size*K[j,:])*intDiscID%(ub+1-lb)
-        #print "tmp", tmp[3:]
-        children.append(Simple_Bounds(tmp,lb,ub))
-        #print "children", tmp[3:], "\n"
-        
-    return children  
+        If the optimizal fitness is unknown, as it often is, this can be left
+        as zero or some reasonable guess based on the understanding of the
+        problem. If the opimtimal fitness is set below what is actually
+        obatinable, the only impact is the removal of this convergence
+        criteria, and the program will still run.
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param population: \e integer \n
+            The number of members in each generation. \n
+        @param initSampling: \e string \n
+            The method used to sample the phase space and create the initial
+            population. Valid options are 'random', 'nolh', 'nolh-rp',
+            'nolh-cdr', and 'lhc' as specified in init_samples(). \n
+        @param fracDiscovered : \e float \n
+            Discovery probability used for the mutate() heuristic. \n
+        @param fracElite: \e float \n
+            Elite fraction probability used for the scatter_search(),
+            crossover(), and cont_crossover() heuristics. \n
+        @param fracLevy: \e float \n
+            Levy flight probability used for the disc_levy_flight() and
+            cont_levy_flight() heuristics. \n
+        @param alpha: \e float \n
+            Levy exponent - defines the index of the distribution and controls
+            scale properties of the stochastic process. \n
+        @param gamma: \e float \n
+            Gamma - scale unit of process for Levy flights. \n
+        @param n: \e integer \n
+            Number of independent variables - can be used to reduce Levy flight
+            sampling variance. \n
+        @param penalty: \e float \n
+            Individual constraint violation penalty to add to objective
+            function. \n
+        @param scalingFactor: \e float \n
+            Step size scaling factor used to adjust Levy flights to length scale
+            of system. The implementation of the Levy flight sampling makes this
+            largely arbitrary. \n
+        @param maxGens: \e integer \n
+            The maximum number of generations to search. \n
+        @param fevalMax: \e integer \n
+            The maximum number of objective function evaluations. \n
+        @param convTol: \e float \n
+            The minimum change of the best objective value before the search
+            terminates. \n
+        @param stallIterLimit: \e integer \n
+            The maximum number of generations to search without a descrease
+            exceeding convTol. \n
+        @param optimalFitness: \e float \n
+            The best know fitness value for the problem considered used to test
+            for convergence. \n
+        @param optConvTol: \e float \n
+            The maximum deviation from the best know fitness value before the
+            search terminates. \n
+        """
+
+        ## @var population
+        # \e integer
+        # The number of members in each generation.
+        self.population = population
+
+        ## @var initSampling
+        # \e string
+        # The method used to sample the phase space and create the initial
+        # population. Valid options are 'random', 'nolh', 'nolh-rp',
+        #'nolh-cdr', and 'lhc' as specified in init_samples().
+        self.initSampling = initSampling
+
+        ## @var fracDiscovered
+        # \e float
+        # Discovery probability used for the mutate() heuristic.
+        self.fracDiscovered = fracDiscovered
+        assert self.fracDiscovered >= 0 and self.fracDiscovered <= 1, 'The \
+                                  probability of discovery must exist on (0,1]'
+        ## @var fracElite
+        # \e float
+        # Elite fraction probability used for the scatter_search(), crossover(),
+        # and cont_crossover() heuristics.
+        self.fracElite = fracElite
+        assert self.fracElite >= 0 and self.fracElite <= 1, 'The elitism \
+                                 fraction must exist on (0,1]'
+
+        ## @var fracLevy
+        # \e float
+        # Levy flight probability used for the disc_levy_flight() and
+        # cont_levy_flight() heuristics.
+        self.fracLevy = fracLevy
+        assert self.fracLevy >= 0 and self.fracLevy <= 1, 'The probability \
+                           that a Levy flight is performed must exist on (0,1]'
+
+        ## @var alpha
+        # \e float
+        # Levy exponent - defines the index of the distribution and controls
+        # scale properties of the stochastic process.
+        self.alpha = alpha
+
+        ## @var gamma
+        # \e float
+        # Gamma - scale unit of process for Levy flights.
+        self.gamma = gamma
+
+        ## @var n
+        # \e integer
+        # Number of independent variables - can be used to reduce Levy flight
+        # sampling variance.
+        self.n = n
+
+        ## @var scalingFactor
+        # \e float
+        # Step size scaling factor used to adjust Levy flights to length scale
+        # of system. The implementation of the Levy flight sampling makes this
+        # largely arbitrary.
+        self.scalingFactor = scalingFactor
+
+        ## @var penalty
+        # \e float
+        # Individual constraint violation penalty to add to objective function.
+        self.penalty = penalty
+
+        ## @var maxGens
+        # \e integer
+        # The maximum number of generations to search.
+        self.maxGens = maxGens
+
+        ## @var fevalMax
+        # \e integer
+        # The maximum number of objective function evaluations.
+        self.fevalMax = fevalMax
+
+        ## @var convTol
+        # \e float
+        # The minimum change of the best objective value before the search
+        # terminates.
+        self.convTol = convTol
+
+        ## @var stallIterLimit
+        # \e integer
+        # The maximum number of gen3rations to search without a descrease
+        # exceeding convTol.
+        self.stallIterLimit = stallIterLimit
+
+        ## @var optimalFitness
+        # \e float
+        # The best know fitness value for the problem considered used to test
+        # for convergence.
+        self.optimalFitness = optimalFitness
+
+        ## @var optConvTol
+        # \e float
+        # The maximum deviation from the best know fitness value before the
+        # search terminates.
+        self.optConvTol = optConvTol
+
+    def initialize(self, numSamples, sampleMethod, lb, ub, varType):
+        """!
+        Initialize the population according to the sampling method chosen.
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param numSamples: \e integer \n
+            The number of samples to be generated. \n
+        @param sampleMethod: \e string \n
+            The method used to sample the phase space and create the initial
+            population. Valid options are 'random', 'nolh', 'nolh-rp',
+            'nolh-cdr', and 'lhc' as specified in init_samples(). \n
+        @param lb: \e array \n
+            The lower bounds of the design variable(s). \n
+        @param ub: \e array \n
+            The upper bounds of the design variable(s). \n
+        @param varType: \e array \n
+            The type of variable for each design parameter. Allowed values:
+            'c' = continuous \n
+            'i' = integer/binary (difference denoted by ub/lb) \n
+            'd' = discrete where the allowed values are given by the option
+                  discreteVals nxm arrary with n=# of discrete variables
+                  and m=# of values that can be taken for each variable \n
+            'x' = combinatorial. All of the variables denoted by x are
+                  assumed to be "swappable" in combinatorial permutations.
+                  There must be at least two variables denoted as
+                  combinatorial. \n
+            'f' = fixed design variable \n
+
+        @return <em> list of arrays: </em> The initialized set of samples.
+        """
+
+        initSamples = initial_samples(lb, ub, sampleMethod, numSamples)
+        for var in range(len(varType)):
+            if varType[var] == 'i' or varType[var] == 'd':
+                initSamples[:, var] = np.rint(initSamples[:, var])
+        return initSamples
+
+    def disc_levy_flight(self, pop, lb, ub, varID):
+        """!
+        Generate new children using truncated Levy flights permutation of
+        current generation design parameters according to:
+
+        \f$ L_{\alpha,\gamma}=FLOOR(TLF_{\alpha,\gamma}*D(x)), \f$
+
+        where \f$ TLF_{\alpha,\gamma} \f$ is calculated in tlf(). Applies
+        rejection_bounds() to ensure all solutions lie within the design
+        space by adapting the step size to the size of the design space.
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+        @param lb: \e array \n
+            The lower bounds of the design variable(s). \n
+        @param ub: \e array \n
+            The upper bounds of the design variable(s). \n
+        @param varID: \e array \n
+            A truth array indicating the location of the variables to be
+            permuted. If the variable is to be permuted, a 1 is inserted at
+            the variable location; otherwise a 0. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        assert len(lb) == len(ub), 'Lower and upper bounds have different \
+                         #s of design variables in disc_levy_flight function.'
+        assert len(lb) == len(pop[0]), 'Bounds and pop have different #s \
+                         of design variables in disc_levy_flight function.'
+        assert len(lb) == len(varID), 'The bounds size ({}) must be \
+                consistent with the size of the variable ID truth vector ({})\
+                in disc_levy_flight function.'.format(len(lb), len(varID))
+
+        children = [] # Local copy of children generated
+
+        # Determine step size using Levy Flight
+        step = tlf(len(pop), len(pop[0]), alpha=self.alpha, gamma=self.gamma)
+
+        # Initialize Variables
+        used = []
+        for i in range(0, int(self.fracLevy*self.population), 1):
+            k = int(rand()*self.population)
+            while k in used:
+                k = int(rand()*self.population)
+            used.append(k)
+            children.append(cp.deepcopy(pop[k]))
+
+            #Calculate Levy flight
+            stepSize = np.round(step[k, :]*varID*(ub-lb))
+            if all(stepSize == 0):
+                stepSize = np.round(rand(len(varID))*(ub-lb))*varID
+            children[i] = (children[i]+stepSize)%(ub+1-lb)
+
+            #Build child applying variable boundaries
+            children[i] = rejection_bounds(pop[k], children[i], stepSize, lb,
+                                           ub)
+
+        return children, used
+
+    def cont_levy_flight(self, pop, lb, ub, varID):
+        """!
+        Generate new children using Levy flights permutation of current
+        generation design parameters according to:
+
+        \f$ x_r^{g+1}=x_r^{g}+ \frac{1}{\beta} L_{\alpha,\gamma}, \f$
+
+        where \f$ L_{\alpha,\gamma} \f$ is calculated in levy() according
+        to the Mantegna algorithm.  Applies rejection_bounds() to ensure all
+        solutions lie within the design space by adapting the step size to
+        the size of the design space.
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+        @param lb: \e array \n
+            The lower bounds of the design variable(s). \n
+        @param ub: \e array \n
+            The upper bounds of the design variable(s). \n
+        @param varID: \e array \n
+            A truth array indicating the location of the variables to be
+            permuted. If the variable is to be permuted, a 1 is inserted at
+            the variable location; otherwise a 0. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        assert len(lb) == len(ub), 'Lower and upper bounds have different \
+                         #s of design variables in cont_levy_flight function.'
+        assert len(lb) == len(pop[0]), 'Bounds and pop have different #s \
+                         of design variables in cont_levy_flight function.'
+        assert len(lb) == len(varID), 'The bounds size ({}) must be \
+                consistent with the size of the variable ID truth vector ({})\
+                in cont_levy_flight function.'.format(len(lb), len(varID))
+
+        children = [] # Local copy of children generated
+
+        # Determine step size using Levy Flight
+        step = levy(len(pop[0]), len(pop), alpha=self.alpha, gamma=self.gamma,
+                    n=self.n)
+
+        # Perform global search from fracLevy*population parents
+        used = []
+        for i in range(int(self.fracLevy*self.population)):
+            k = int(rand()*self.population)
+            while k in used:
+                k = int(rand()*self.population)
+            used.append(k)
+            children.append(cp.deepcopy(pop[k]))
+
+            #Calculate Levy flight
+            stepSize = 1.0/self.scalingFactor*step[k, :]*varID
+            children[i] = children[i]+stepSize
+
+            #Build child applying variable boundaries
+            children[i] = rejection_bounds(pop[k], children[i], stepSize, lb,
+                                           ub)
+
+        return children, used
+
+    def scatter_search(self, pop, lb, ub, varID, intDiscID=None):
+        """!
+        Generate new designs using the scatter search heuristic according to:
+
+        \f$ x^{g+1} = c_1 + (c_2-c_1) r \f$
+
+        where
+
+        \f$ c_1 = x^e - d(1+\alpha \beta) \f$ \n
+        \f$ c_2 = x^e - d(1-\alpha \beta) \f$ \n
+        \f$ d = \frac{x^r - x^e}{2} \f$ \n \n
+
+        and
+
+        \f$ \alpha = \f$ 1 if i < j & -1 if i > j \n
+        \f$ \beta = \frac{|j-i|-1}{b-2} \f$
+
+        where b is the size of the population.
+
+        Adapted from ideas in Egea, "An evolutionary method for complex-
+        process optimization."
+
+        Applies simple_bounds() to ensure all solutions lie within the design
+        space by adapting the step size to the size of the design space.
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+        @param lb: \e array \n
+            The lower bounds of the design variable(s). \n
+        @param ub: \e array \n
+            The upper bounds of the design variable(s). \n
+        @param varID: \e array \n
+            A truth array indicating the location of the variables to be
+            permuted. If the variable is to be permuted, a 1 is inserted at
+            the variable location; otherwise a 0. \n
+        @param intDiscID: \e array \n
+            A truth array indicating the location of the discrete variable.
+            A 1 is inserted at the discrete variable location; otherwise a
+            0. If no discrete variables, the array will be set to 0
+            automatically. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        assert len(lb) == len(ub), 'Lower and upper bounds have different \
+                         #s of design variables in scatter_search function.'
+        assert len(lb) == len(pop[0]), 'Bounds and pop have different #s \
+                         of design variables in scatter_search function.'
+        assert len(lb) == len(varID), 'The bounds size ({}) must be \
+                consistent with the size of the variable ID truth vector ({})\
+                in scatter_search function.'.format(len(lb), len(varID))
+
+        # If no discretes variables exist, set ID array to zero
+        if len(intDiscID) != len(varID):
+            intDiscID = np.zeros_like(varID)
+
+        # Use scatter search to generate candidate children solutions
+        children = []
+        used = []
+        for i in range(0, int(len(pop)*self.fracElite), 1):
+            #Randomly choose starting parent #2
+            j = int(rand()*len(pop))
+            while j == i or j in used:
+                j = int(rand()*len(pop))
+            used.append(i)
+
+            d = (pop[j]-pop[i])/2.0
+            if i < j:
+                alpha = 1
+            else:
+                alpha = -1
+            beta = (abs(j-i)-1)/(len(pop)-2)
+            c1 = pop[i]-d*(1+alpha*beta)
+            c2 = pop[i]+d*(1-alpha*beta)
+            tmp = c1+(c2-c1)*rand(len(pop[i]))
+
+            # Enforce integer and discrete constraints, if present
+            tmp = tmp*varID+np.round(tmp*intDiscID)
+
+            #Build child applying variable boundaries
+            children.append(simple_bounds(tmp, lb, ub))
+
+        return children, used
+
+    def crossover(self, pop):
+        """!
+        Generate new designs by using inver-over on combinatorial variables.
+        Adapted from ideas in Tao, "Iver-over Operator for the TSP."
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        """
+
+        children = []
+
+        for i in range(0, int(len(pop)*self.fracElite), 1):
+            #Randomly choose starting parent #2
+            r = int(rand()*len(pop))
+            while r == i:
+                r = int(rand()*len(pop))
+
+            # Randomly choose crossover point
+            c = int(rand()*len(pop[i]))
+            if rand() < 0.5:
+                children.append(np.array(pop[i][0:c+1].tolist() \
+                                         +pop[r][c+1:].tolist()))
+            else:
+                children.append(np.array(pop[r][0:c+1].tolist()\
+                                         +pop[i][c+1:].tolist()))
+
+        return children
+
+    def cont_crossover(self, pop, lb, ub, varID, intDiscID=None):
+        """!
+        Generate new children using distance based crossover strategies on
+        the top parent. Ideas adapted from Walton "Modified Cuckoo Search: A
+        New Gradient Free Optimisation Algorithm" and Storn "Differential
+        Evolution - A Simple and Efficient Heuristic for Global Optimization
+        over Continuous Spaces"
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+        @param lb: \e array \n
+            The lower bounds of the design variable(s). \n
+        @param ub: \e array \n
+            The upper bounds of the design variable(s). \n
+        @param varID: \e array \n
+            A truth array indicating the location of the variables to be
+            permuted. If the variable is to be permuted, a 1 is inserted at
+            the variable location; otherwise a 0. \n
+        @param intDiscID: \e array \n
+            A truth array indicating the location of the discrete variable.
+            A 1 is inserted at the discrete variable location; otherwise a
+            0. If no discrete variables, the array will be set to 0
+            automatically. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        assert len(lb) == len(ub), 'Lower and upper bounds have different \
+                         #s of design variables in cont_crossover function.'
+        assert len(lb) == len(pop[0]), 'Bounds and pop have different #s \
+                         of design variables in cont_crossover function.'
+        assert len(lb) == len(varID), 'The bounds size ({}) must be \
+                consistent with the size of the variable ID truth vector ({})\
+                in cont_crossover function.'.format(len(lb), len(varID))
+
+        # If no discretes variables exist, set ID array to zero
+        if len(intDiscID) != len(varID):
+            intDiscID = np.zeros_like(varID)
+
+        # Initialize variables
+        goldenRatio = (1.+sqrt(5))/2.
+        dx = np.zeros_like(pop[0])
+
+        # Crossover top parent with an elite parent to speed local convergence
+        children = []
+        used = []
+        for i in range(0, int(self.fracElite*len(pop)), 1):
+            r = int(rand()*self.population)
+            while r in used or r == i:
+                r = int(rand()*self.population)
+            used.append(i)
+
+            children.append(cp.deepcopy(pop[r]))
+            dx = abs(pop[i]-children[i])/goldenRatio
+            children[i] = children[i]+dx*varID+np.round(dx*intDiscID)
+            children[i] = simple_bounds(children[i], lb, ub)
+
+        return children, used
+
+    def mutate(self, pop, lb, ub, varID, intDiscID=None):
+        """!
+        Generate new children by adding a weighted difference between two
+        population vectors to a third vector.  Ideas adapted from Storn,
+        "Differential Evolution - A Simple and Efficient Heuristic for Global
+        Optimization over Continuous Spaces" and Yang, "Nature Inspired
+        Optimmization Algorithms"
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The Gnoweeheuristic pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+        @param lb: \e array \n
+            The lower bounds of the design variable(s). \n
+        @param ub: \e array \n
+            The upper bounds of the design variable(s). \n
+        @param varID: \e array \n
+            A truth array indicating the location of the variables to be
+            permuted. If the variable is to be permuted, a 1 is inserted at
+            the variable location; otherwise a 0. \n
+        @param intDiscID: \e array \n
+            A truth array indicating the location of the discrete variable.
+            A 1 is inserted at the discrete variable location; otherwise a
+            0. If no discrete variables, the array will be set to 0
+            automatically. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        """
+
+        assert len(lb) == len(ub), 'Lower and upper bounds have different \
+                         #s of design variables in mutate function.'
+        assert len(lb) == len(pop[0]), 'Bounds and pop have different #s \
+                         of design variables in mutate function.'
+        assert len(lb) == len(varID), 'The bounds size ({}) must be \
+                consistent with the size of the variable ID truth vector ({})\
+                in mutate function.'.format(len(lb), len(varID))
+
+        children = []
+
+        # If no discretes variables exist, set ID array to zero
+        if len(intDiscID) != len(varID):
+            intDiscID = np.zeros_like(varID)
+
+        #Discover (1-fd); K is a status vector to see if discovered
+        k = rand(len(pop), len(pop[0])) > self.fracDiscovered
+
+        #Bias the discovery to the worst fitness solutions
+        childn1 = cp.copy(permutation(pop))
+        childn2 = cp.copy(permutation(pop))
+
+        #New solution by biased/selective random walks
+        r = rand()
+        for j in range(0, len(pop), 1):
+            n = np.array((childn1[j]-childn2[j]))
+            stepSize = r*n*varID+(n*intDiscID).astype(int)
+            tmp = (pop[j]+stepSize*k[j, :])*varID+(pop[j]+stepSize*k[j, :]) \
+                   *intDiscID%(ub+1-lb)
+            children.append(simple_bounds(tmp, lb, ub))
+
+        return children

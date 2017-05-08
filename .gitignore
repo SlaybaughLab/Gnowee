@@ -4,6 +4,9 @@ BenchmarkPlots/.ipynb_checkpoints/*
 docs/html
 docs/latex
 
+## doygen
+*.html
+
 ## Other Files
 *.bmp
 *.jpg
