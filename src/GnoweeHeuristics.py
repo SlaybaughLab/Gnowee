@@ -226,7 +226,7 @@ class GnoweeHeuristics(object):
                                                             self.convTol,
                                                             self.stallIterLimit,
                                                             self.optimalFitness,
-                                                            self.optConvtol)
+                                                            self.optConvTol)
 
     def __str__(self):
         """!
@@ -252,7 +252,7 @@ class GnoweeHeuristics(object):
         header += ["Convergence Tolerance = {}".format(self.convTol)]
         header += ["Stall Limit = {}".format(self.stallIterLimit)]
         header += ["Optimal Fitness = {}".format(self.optimalFitness)]
-        header += ["Optimal Convergence Tolerance = {}".format(self.optConvtol)]
+        header += ["Optimal Convergence Tolerance = {}".format(self.optConvTol)]
         return "\n".join(header)+"\n"
 
     def initialize(self, numSamples, sampleMethod, lb, ub, varType):
