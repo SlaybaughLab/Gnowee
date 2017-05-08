@@ -46,11 +46,10 @@ class GnoweeHeuristics(object):
         """!
         Constructor to build the GnoweeHeuristics class.
 
-        The default settings are
-        found to be optimized for a wide range of problems, but can be changed
-        to optimize performance for a particular problem type or class.  For
-        more details, refer to the benchmark code in the development branch of
-        the repo or <insert link to paper>.
+        The default settings are found to be optimized for a wide range of
+        problems, but can be changed to optimize performance for a particular
+        problem type or class.  For more details, refer to the benchmark code
+        in the development branch of the repo or <insert link to paper>.
 
         If the optimizal fitness is unknown, as it often is, this can be left
         as zero or some reasonable guess based on the understanding of the
@@ -59,7 +58,7 @@ class GnoweeHeuristics(object):
         criteria, and the program will still run.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param population: \e integer \n
             The number of members in each generation. \n
         @param initSampling: \e string \n
@@ -204,12 +203,64 @@ class GnoweeHeuristics(object):
         # search terminates.
         self.optConvTol = optConvTol
 
+    def __repr__(self):
+        """!
+        GnoweeHeuristics print function.
+
+        @param self: <em> GnoweeHeuristics pointer </em> \n
+            The GnoweeHeuristics pointer. \n
+        """
+        return "GnoweeHeuristics({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, \
+                                 {}, {}, {}, {}, {})".format(self.population,
+                                                            self.initSampling,
+                                                            self.fracDiscovered,
+                                                            self.fracElite,
+                                                            self.fracLevy,
+                                                            self.alpha,
+                                                            self.gamma,
+                                                            self.n,
+                                                            self.scalingFactor,
+                                                            self.penalty,
+                                                            self.maxGens,
+                                                            self.fevalMax,
+                                                            self.convTol,
+                                                            self.stallIterLimit,
+                                                            self.optimalFitness,
+                                                            self.optConvtol)
+
+    def __str__(self):
+        """!
+        Human readable GnoweeHeuristics print function.
+
+        @param self: <em> GnoweeHeuristics pointer </em> \n
+            The GnoweeHeuristics pointer. \n
+        """
+
+        header = ["GnoweeHeuristics:"]
+        header += ["Population = {}".format(self.population)]
+        header += ["Sampling Method = {}".format(self.initSampling)]
+        header += ["Discovery Fraction = {}".format(self.fracDiscovered)]
+        header += ["Elitism Fraction = {}".format(self.fracElite)]
+        header += ["Levy Fraction = {}".format(self.fracLevy)]
+        header += ["Levy Alpha = {}".format(self.alpha)]
+        header += ["Levy Gamma = {}".format(self.gamma)]
+        header += ["Levy Independent Samples = {}".format(self.n)]
+        header += ["Levy Scaling Parameter = {}".format(self.scalingFactor)]
+        header += ["Constraint Violaition Penalty = {}".format(self.penalty)]
+        header += ["Max # of Generations = {}".format(self.maxGens)]
+        header += ["Max # of Function Evaluations = {}".format(self.fevalMax)]
+        header += ["Convergence Tolerance = {}".format(self.convTol)]
+        header += ["Stall Limit = {}".format(self.stallIterLimit)]
+        header += ["Optimal Fitness = {}".format(self.optimalFitness)]
+        header += ["Optimal Convergence Tolerance = {}".format(self.optConvtol)]
+        return "\n".join(header)+"\n"
+
     def initialize(self, numSamples, sampleMethod, lb, ub, varType):
         """!
         Initialize the population according to the sampling method chosen.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param numSamples: \e integer \n
             The number of samples to be generated. \n
         @param sampleMethod: \e string \n
@@ -254,7 +305,7 @@ class GnoweeHeuristics(object):
         space by adapting the step size to the size of the design space.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
@@ -320,7 +371,7 @@ class GnoweeHeuristics(object):
         the size of the design space.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
@@ -398,7 +449,7 @@ class GnoweeHeuristics(object):
         space by adapting the step size to the size of the design space.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
@@ -468,7 +519,7 @@ class GnoweeHeuristics(object):
         Adapted from ideas in Tao, "Iver-over Operator for the TSP."
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
@@ -505,7 +556,7 @@ class GnoweeHeuristics(object):
         over Continuous Spaces"
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
@@ -570,7 +621,7 @@ class GnoweeHeuristics(object):
         Optimmization Algorithms"
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
-            The Gnoweeheuristic pointer. \n
+            The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
