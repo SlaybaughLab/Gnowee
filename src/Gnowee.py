@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """!
 @file src/Gnowee.py
 @package Gnowee
@@ -6,8 +5,6 @@
 @defgroup Gnowee Gnowee
 
 @brief Main program for the Gnowee metaheuristic algorithm.
-
-\version 1.0
 
 General nearly-global metaheuristic optimization algorithm. Uses a blend of
 common heuristics to solve difficult gradient free constrained MINLP problems
@@ -35,8 +32,9 @@ from GnoweeUtilities import Parent, Get_Best
 #------------------------------------------------------------------------------#
 def main(func, lb, ub, varType, gh, discreteVals=[]):
     """!
-    Main controller program for the Gnowee optimization. 
-    
+    @ingroup Gnowee
+    Main controller program for the Gnowee optimization.
+
     @param func: \e function \n
         The objective function to be minimized. \n
     @param lb: <em> list or array </em> \n
@@ -64,8 +62,8 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
                to be "swappable" in combinatorial permutations.  There must be
                at least two variables denoted as combinatorial. \n
          'f' = fixed design variable. Will not be considered of any
-               permutation. \n 
-    @param: <em> GnoweeHeuristic object </em> \n    
+               permutation. \n
+    @param: gh: <em> GnoweeHeuristic object </em> \n
         An object constaining the settings and methods required for the
         Gnowee optimization algorithm. \n
     @param discreteVals: <em> list of list(s) </em> \n
@@ -75,41 +73,41 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
         discreteVals could be specified as: \n
         discreteVals = [[0.125, 0.25, 0.375], [0.25, 0.5, 075]] \n
         Gnowee will then map the optimization results to these allowed values.
-    
+
     @return \e list: List for design event objects for the current top solution
         vs generation. Only stores the information when new optimal designs are
         found. \n
     """
 
-    start_time=time.time()     #Start Clock
-    timeline=[]                #List of history objects
-    pop=[]                     #List of parent objects
-    
+    startTime = time.time()     #Start Clock
+    timeline = []                #List of history objects
+    pop = []                     #List of parent objects
+
     # Check input variables
     assert varType.count('d') == len(discreteVals), ('The allowed discrete '
                         'values must be specified for each discrete variable.'
                         '{} in varType, but {} in discreteVals.'.format(
-                         varType.count('d'),len(discreteVals)))
+                         varType.count('d'), len(discreteVals)))
     assert varType.count('c') + varType.count('b') + varType.count('i') \
            == len(ub), ('Each specified continuous, binary, and integer '
                         'variable must have a corresponding upper and lower '
                         'bounds. {} variables and {} bounds specified'.format(
-                         varType.count('c') + varType.count('b') + 
+                         varType.count('c') + varType.count('b') +
                          varType.count('i'), len(lb)))
     assert max(len(varType) - 1 - varType[::-1].index('c') \
-                 if 'c' in varType else -1, 
+                 if 'c' in varType else -1,
                len(varType) - 1 - varType[::-1].index('b') \
                  if 'b' in varType else -1,
                len(varType) - 1 - varType[::-1].index('i') \
                  if 'i' in varType else -1) \
                 < varType.index('d'), ('The discrete variables must be '
-                'specified after the continuous, binary, and integer variables. '
-                'The order given was {}'.format(varType))
+                'specified after the continuous, binary, and integer variables.'
+                ' The order given was {}'.format(varType))
     assert len(lb) == len(ub), ('The lower and upper bounds must have the same '
                 'dimensions. lb = {}, ub = {}'.format(len(lb), len(ub)))
     assert set(varType).issubset(['c', 'i', 'd', 'x', 'f']), ('The variable '
-                'specifications do not match the allowed values of "c", "i", or '
-                '"d".  The varTypes specified is {}'.format(varType))
+                'specifications do not match the allowed values of "c", "i", or'
+                ' "d".  The varTypes specified is {}'.format(varType))
     assert np.all(ub > lb), ('All upper-bound values must be greater than '
                              'lower-bound values')
 
@@ -117,13 +115,12 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
     for d in range(len(discreteVals)):
         lb.append(0)
         ub.append(len(discreteVals[d])-1)
-        discreteVals[d]=np.array(discreteVals[d])
+        discreteVals[d] = np.array(discreteVals[d])
     lb = np.array(lb)
     ub = np.array(ub)
 
-    # Check for objective function(s) 
+    # Check for objective function(s)
     assert hasattr(func, '__call__'), 'Invalid function handle provided.'
-    obj = lambda x, penalty: func(x, penalty)  
 
     # Initialize population with random initial solutions
     initNum = max(gh.population*2, len(ub)*10)
@@ -159,7 +156,7 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
     xID = np.array(xID)
 
     # Calculate initial fitness values and trim population to gh.population
-    (pop, changes, timeline) = Get_Best(obj, pop, [p.variables for p in pop],
+    (pop, changes, timeline) = Get_Best(func, pop, [p.variables for p in pop],
                                         lb, ub, varType, timeline, gh, 1)
     pop = pop[0:gh.population]
 
@@ -171,7 +168,7 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
     # Iterate until termination criterion met
     converge = False
     while timeline[-1].generation <= gh.maxGens and \
-          timeline[-1].evaluations <= gh.maxFevals and converge==False:
+          timeline[-1].evaluations <= gh.maxFevals and converge == False:
 
         # Sample generational heuristic probabilities
         gh.fracDiscovered = rand()*fd
@@ -179,27 +176,27 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
         gh.fracLevy = rand()*fl
 
         # Levy flights
-        if sum(iID)+sum(dID ) >= 1 and sum(cID) >= 1:
-            (d_children, dind) = gh.disc_levy_flight([p.variables for p in pop],
+        if sum(iID)+sum(dID) >= 1 and sum(cID) >= 1:
+            (dChildren, dind) = gh.disc_levy_flight([p.variables for p in pop],
                                                      lb, ub, iID+dID)
-            (c_children, cind) = gh.cont_levy_flight([p.variables for p in pop],
+            (cChildren, cind) = gh.cont_levy_flight([p.variables for p in pop],
                                                      lb, ub, cID)
             children = []
             ind = []
             for i in range(0, len(cind)):
                 if cind[i] in dind:
                     t = dind.index(cind[i])
-                    children.append(d_children[t]*(iID+dID)+c_children[i]*cID)
+                    children.append(dChildren[t]*(iID+dID)+cChildren[i]*cID)
                     ind.append(cind[i])
-                    del d_children[t]
+                    del dChildren[t]
                     del dind[t]
                 else:
-                    children.append(c_children[i])
+                    children.append(cChildren[i])
                     ind.append(cind[i])
             for i in range(len(dind)):
-                children.append(d_children[i])
-                ind.append(dind[i])      
-            (pop, changes, timeline) = Get_Best(obj, pop, children, lb, ub,
+                children.append(dChildren[i])
+                ind.append(dind[i])
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                 varType, timeline, gh, 0,
                                                 indices=ind, mhFrac=0.2,
                                                 discreteID=dID,
@@ -208,7 +205,7 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
         elif sum(cID) >= 1 and sum(iID)+sum(dID) == 0:
             (children, ind) = gh.cont_levy_flight([p.variables for p in pop],
                                                   lb, ub, cID)
-            (pop, changes, timeline) = Get_Best(obj,pop, children, lb, ub,
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                 varType, timeline, gh, 0,
                                                 indices=ind, mhFrac=0.2,
                                                 random_replace=True,
@@ -218,7 +215,7 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
         elif sum(cID) == 0 and sum(iID)+sum(dID) >= 1:
             (children, ind) = gh.disc_levy_flight([p.variables for p in pop],
                                                   lb, ub, iID+dID)
-            (pop, changes, timeline) = Get_Best(obj, pop, children, lb, ub,
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                 varType, timeline, gh, 0,
                                                 indices=ind, mhFrac=0.2,
                                                 random_replace=True,
@@ -226,36 +223,36 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
                                                 discreteMap=discreteVals)
 
         # Crossover
-        if sum(cID)+sum(iID)+sum(dID)>=1:
+        if sum(cID)+sum(iID)+sum(dID) >= 1:
             (children, ind) = gh.crossover([p.variables for p in pop], lb, ub,
                                             cID, intDiscID=iID+dID)
-            (pop,changes, timeline) = Get_Best(obj, pop, children, lb, ub,
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                varType, timeline, gh, 0,
                                                discreteID=dID,
                                                discreteMap=discreteVals)
 
         # Scatter Search
-        if sum(cID)+sum(iID)+sum(dID)>=1:
+        if sum(cID)+sum(iID)+sum(dID) >= 1:
             (children, ind) = gh.scatter_search([p.variables for p in pop], lb,
                                                 ub, cID, intDiscID=iID+dID)
-            (pop,changes, timeline) = Get_Best(obj, pop, children, lb, ub,
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                varType, timeline, gh, 0,
                                                indices=ind, discreteID=dID,
                                                discreteMap=discreteVals)
 
         # Elite Crossover
-        if sum(cID)+sum(iID)+sum(dID)>=1:
+        if sum(cID)+sum(iID)+sum(dID) >= 1:
             children = gh.elite_crossover([p.variables for p in pop])
-            (pop,changes, timeline) = Get_Best(obj, pop, children, lb, ub,
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                varType, timeline, gh, 0,
                                                discreteID=dID,
                                                discreteMap=discreteVals)
 
         # Mutation
-        if sum(cID)+sum(iID)+sum(dID)>=1:
+        if sum(cID)+sum(iID)+sum(dID) >= 1:
             children = gh.mutate([p.variables for p in pop], lb, ub, cID,
                                  intDiscID=iID+dID)
-            (pop, changes, timeline) = Get_Best(obj, pop, children, lb, ub,
+            (pop, changes, timeline) = Get_Best(func, pop, children, lb, ub,
                                                 varType, timeline, gh, 1,
                                                 discreteID=dID,
                                                 discreteMap=discreteVals)
@@ -283,7 +280,7 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
         if gh.optimalFitness == 0.0:
             if timeline[-1].fitness < gh.optConvTol:
                 converge = True
-                print "Fitness Convergence"                
+                print "Fitness Convergence"
         elif abs((timeline[-1].fitness-gh.optimalFitness)/gh.optimalFitness) \
               <= gh.optConvTol:
             converge = True
@@ -293,8 +290,8 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
             print "Fitness Convergence"
 
     #Determine execution time
-    print "Program execution time was {}.".format(time.time() - start_time)
-    return timeline   
+    print "Program execution time was {}.".format(time.time() - startTime)
+    return timeline
 
 if __name__ == '__main__':
     main()
