@@ -1,5 +1,5 @@
 ##Folders
-.ipynb_checkpoints/*
+src/.ipynb_checkpoints/*
 BenchmarkPlots/.ipynb_checkpoints/*
 docs/html
 docs/latex
@@ -13,5 +13,6 @@ docs/latex
 *.png
 *.pyc
 *.fig
+*.$$$
 
 

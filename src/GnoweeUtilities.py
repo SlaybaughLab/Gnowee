@@ -15,8 +15,6 @@ import numpy as np
 import copy as cp
 import bisect
 
-from GnoweeHeuristics import initialize
-
 #------------------------------------------------------------------------------#
 class Parent(object):
     """!
@@ -259,8 +257,8 @@ def Get_Best(func,parents,children,lb,ub,varType,timeline,S,genUpdate,indices=[]
     # Find worst fitness to use as the penalty
     for i in range(0,len(children),1):
         (fnew,gnew)=func(children[i],penalty=0)
-        if fnew > S.pen:
-            S.pen=fnew
+        if fnew > S.penalty:
+            S.penalty=fnew
     # Calculate fitness; replace parents if child has better fitness
     feval=0
     for i in range(0,len(children),1):
@@ -270,42 +268,42 @@ def Get_Best(func,parents,children,lb,ub,varType,timeline,S,genUpdate,indices=[]
             j=indices[i]
         else: 
             j=i
-        (fnew,gnew)=func(children[i],penalty=S.pen)
+        (fnew,gnew)=func(children[i],penalty=S.penalty)
         feval += 1
-        if fnew < parents[j].f:
-            parents[j].f=fnew
-            parents[j].d=cp.copy(children[i])
-            parents[i].c+=1
-            parents[i].s=0
+        if fnew < parents[j].fitness:
+            parents[j].fitness=fnew
+            parents[j].variables=cp.copy(children[i])
+            parents[i].changeCount+=1
+            parents[i].stallCount=0
             replace+=1
-            if parents[i].c>=25 and j>=S.p*S.fe:
+            if parents[i].changeCount>=25 and j>=S.population*S.fracElite:
                 #print "Max Changes: ", parents[i].f
-                parents[i].d=initialize(1, 'random', lb, ub, varType).flatten()
-                (fnew,gnew)=func(parents[i].d,penalty=S.pen)
-                parents[i].f=fnew
-                parents[i].c=0
+                parents[i].variables=S.initialize(1, 'random', lb, ub, varType).flatten()
+                (fnew,gnew)=func(parents[i].variables,penalty=S.penalty)
+                parents[i].fitness=fnew
+                parents[i].changeCount=0
         else:
-            parents[j].s+=1
-            if parents[j].s>50000 and j!=0:
-                parents[i].d=initialize(1, 'random', lb, ub, varType).flatten()
-                (fnew,gnew)=func(parents[i].d,penalty=S.pen)
-                parents[i].f=fnew
-                parents[i].c=0
-                parents[i].s=0
+            parents[j].stallCount+=1
+            if parents[j].stallCount>50000 and j!=0:
+                parents[i].variables=S.initialize(1, 'random', lb, ub, varType).flatten()
+                (fnew,gnew)=func(parents[i].variables,penalty=S.penalty)
+                parents[i].fitness=fnew
+                parents[i].changeCount=0
+                parents[i].stallCount=0
                        
             # Metropis-Hastings algorithm
             r=int(np.random.rand()*len(parents))
             if r<=mhFrac:
                 r=int(np.random.rand()*len(parents))
-                if fnew < parents[r].f:  
-                    parents[r].f=fnew
-                    parents[r].d=cp.copy(children[i])
-                    parents[r].c+=1
-                    parents[r].s+=1
+                if fnew < parents[r].fitness:  
+                    parents[r].fitness=fnew
+                    parents[r].variables=cp.copy(children[i])
+                    parents[r].changeCount+=1
+                    parents[r].stallCount+=1
                     replace+=1
 
     #Sort the pop
-    parents.sort(key=lambda x: x.f)
+    parents.sort(key=lambda x: x.fitness)
     
     # Map the discrete variables for storage
     if discreteID!=[]:
@@ -313,20 +311,20 @@ def Get_Best(func,parents,children,lb,ub,varType,timeline,S,genUpdate,indices=[]
         i=0
         for j in range(len(discreteID)):
             if discreteID[j]==1:
-                dVec.append(discreteMap[i][int(parents[0].d[j])])
+                dVec.append(discreteMap[i][int(parents[0].variables[j])])
                 i+=1
             else:
-                dVec.append(parents[0].d[j])
+                dVec.append(parents[0].variables[j])
     else:
-        dVec=cp.copy(parents[0].d)
+        dVec=cp.copy(parents[0].variables)
         
     #Store history on timeline if new optimal design found
     if len(timeline)<2:
-        timeline.append(Event(len(timeline)+1,feval,parents[0].f,dVec))
-    elif parents[0].f<timeline[-1].f and abs((timeline[-1].f-parents[0].f)/parents[0].f) > S.ct:
-        timeline.append(Event(timeline[-1].g+1,timeline[-1].e+feval,parents[0].f,dVec))
+        timeline.append(Event(len(timeline)+1,feval,parents[0].fitness,dVec))
+    elif parents[0].fitness<timeline[-1].fitness and abs((timeline[-1].fitness-parents[0].fitness)/parents[0].fitness) > S.convTol:
+        timeline.append(Event(timeline[-1].generation+1,timeline[-1].evaluations+feval,parents[0].fitness,dVec))
     else:
-        timeline[-1].g+=genUpdate
-        timeline[-1].e+=feval
+        timeline[-1].generation+=genUpdate
+        timeline[-1].evaluations+=feval
         
     return(parents,replace,timeline)

@@ -40,7 +40,7 @@ class GnoweeHeuristics(object):
     def __init__(self, population=25, initSampling='lhc', fracDiscovered=0.2,
                  fracElite=0.2, fracLevy=0.2, alpha=1.5, gamma=1, n=1,
                  scalingFactor=10.0, penalty=0.0, maxGens=20000,
-                 fevalMax=200000, convTol=1e-6, stallIterLimit=225,
+                 maxFevals=200000, convTol=1e-6, stallLimit=225,
                  optimalFitness=0, optConvTol=1e-2):
         """!
         Constructor to build the GnoweeHeuristics class.
@@ -89,12 +89,12 @@ class GnoweeHeuristics(object):
             largely arbitrary. \n
         @param maxGens: \e integer \n
             The maximum number of generations to search. \n
-        @param fevalMax: \e integer \n
+        @param maxFevals: \e integer \n
             The maximum number of objective function evaluations. \n
         @param convTol: \e float \n
             The minimum change of the best objective value before the search
             terminates. \n
-        @param stallIterLimit: \e integer \n
+        @param stallLimit: \e integer \n
             The maximum number of generations to search without a descrease
             exceeding convTol. \n
         @param optimalFitness: \e float \n
@@ -121,14 +121,15 @@ class GnoweeHeuristics(object):
         # \e float
         # Discovery probability used for the mutate() heuristic.
         self.fracDiscovered = fracDiscovered
-        assert self.fracDiscovered >= 0 and self.fracDiscovered <= 1, 
-                             'The probability of discovery must exist on (0,1]'
+        assert self.fracDiscovered >= 0 and self.fracDiscovered <= 1, ('The '
+                                 'probability of discovery must exist on (0,1]')
+
         ## @var fracElite
         # \e float
         # Elite fraction probability used for the scatter_search(), crossover(),
         # and cont_crossover() heuristics.
         self.fracElite = fracElite
-        assert self.fracElite >= 0 and self.fracElite <= 1, ('The elitism ',
+        assert self.fracElite >= 0 and self.fracElite <= 1, ('The elitism '
                                                 'fraction must exist on (0,1]')
 
         ## @var fracLevy
@@ -136,7 +137,7 @@ class GnoweeHeuristics(object):
         # Levy flight probability used for the disc_levy_flight() and
         # cont_levy_flight() heuristics.
         self.fracLevy = fracLevy
-        assert self.fracLevy >= 0 and self.fracLevy <= 1, ('The probability ',
+        assert self.fracLevy >= 0 and self.fracLevy <= 1, ('The probability '
                         'that a Levy flight is performed must exist on (0,1]')
 
         ## @var alpha
@@ -173,10 +174,10 @@ class GnoweeHeuristics(object):
         # The maximum number of generations to search.
         self.maxGens = maxGens
 
-        ## @var fevalMax
+        ## @var maxFevals
         # \e integer
         # The maximum number of objective function evaluations.
-        self.fevalMax = fevalMax
+        self.maxFevals = maxFevals
 
         ## @var convTol
         # \e float
@@ -184,11 +185,11 @@ class GnoweeHeuristics(object):
         # terminates.
         self.convTol = convTol
 
-        ## @var stallIterLimit
+        ## @var stallLimit
         # \e integer
         # The maximum number of gen3rations to search without a descrease
         # exceeding convTol.
-        self.stallIterLimit = stallIterLimit
+        self.stallLimit = stallLimit
 
         ## @var optimalFitness
         # \e float
@@ -221,9 +222,9 @@ class GnoweeHeuristics(object):
                                                             self.scalingFactor,
                                                             self.penalty,
                                                             self.maxGens,
-                                                            self.fevalMax,
+                                                            self.maxFevals,
                                                             self.convTol,
-                                                            self.stallIterLimit,
+                                                            self.stallLimit,
                                                             self.optimalFitness,
                                                             self.optConvTol)
 
@@ -247,9 +248,9 @@ class GnoweeHeuristics(object):
         header += ["Levy Scaling Parameter = {}".format(self.scalingFactor)]
         header += ["Constraint Violaition Penalty = {}".format(self.penalty)]
         header += ["Max # of Generations = {}".format(self.maxGens)]
-        header += ["Max # of Function Evaluations = {}".format(self.fevalMax)]
+        header += ["Max # of Function Evaluations = {}".format(self.maxFevals)]
         header += ["Convergence Tolerance = {}".format(self.convTol)]
-        header += ["Stall Limit = {}".format(self.stallIterLimit)]
+        header += ["Stall Limit = {}".format(self.stallLimit)]
         header += ["Optimal Fitness = {}".format(self.optimalFitness)]
         header += ["Optimal Convergence Tolerance = {}".format(self.optConvTol)]
         return "\n".join(header)+"\n"
@@ -323,18 +324,18 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different ',
+        assert len(lb) == len(ub), ('Lower and upper bounds have different '
                        '#s of design variables in disc_levy_flight function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s ',
+        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
                          'of design variables in disc_levy_flight function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be ',
-             'consistent with the size of the variable ID truth vector ({}) ',
+        assert len(lb) == len(varID), ('The bounds size ({}) must be '
+             'consistent with the size of the variable ID truth vector ({}) '
                 'in disc_levy_flight function.').format(len(lb), len(varID))
 
         children = [] # Local copy of children generated
 
         # Determine step size using Levy Flight
-        step = tlf(len(pop), len(pop[0]), alpha=self.alpha, gamma=self.gamma)
+        step = tlf(len(pop), len(pop[0]), alpha=self.alpha, gam=self.gamma)
 
         # Initialize Variables
         used = []
@@ -389,18 +390,18 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different ',
+        assert len(lb) == len(ub), ('Lower and upper bounds have different '
                        '#s of design variables in cont_levy_flight function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s ',
+        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
                          'of design variables in cont_levy_flight function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be ',
-             'consistent with the size of the variable ID truth vector ({}) ',
+        assert len(lb) == len(varID), ('The bounds size ({}) must be '
+             'consistent with the size of the variable ID truth vector ({}) '
                 'in cont_levy_flight function.').format(len(lb), len(varID))
 
         children = [] # Local copy of children generated
 
         # Determine step size using Levy Flight
-        step = levy(len(pop[0]), len(pop), alpha=self.alpha, gamma=self.gamma,
+        step = levy(len(pop[0]), len(pop), alpha=self.alpha, gam=self.gamma,
                     n=self.n)
 
         # Perform global search from fracLevy*population parents
@@ -472,12 +473,12 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different ',
+        assert len(lb) == len(ub), ('Lower and upper bounds have different '
                        '#s of design variables in scatter_search function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s ',
+        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
                          'of design variables in scatter_search function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be ',
-             'consistent with the size of the variable ID truth vector ({}) ',
+        assert len(lb) == len(varID), ('The bounds size ({}) must be '
+             'consistent with the size of the variable ID truth vector ({}) '
                 'in scatter_search function.').format(len(lb), len(varID))
 
         # If no discretes variables exist, set ID array to zero
@@ -512,7 +513,7 @@ class GnoweeHeuristics(object):
 
         return children, used
 
-    def crossover(self, pop):
+    def elite_crossover(self, pop):
         """!
         Generate new designs by using inver-over on combinatorial variables.
         Adapted from ideas in Tao, "Iver-over Operator for the TSP."
@@ -546,7 +547,7 @@ class GnoweeHeuristics(object):
 
         return children
 
-    def cont_crossover(self, pop, lb, ub, varID, intDiscID=None):
+    def crossover(self, pop, lb, ub, varID, intDiscID=None):
         """!
         Generate new children using distance based crossover strategies on
         the top parent. Ideas adapted from Walton "Modified Cuckoo Search: A
@@ -579,12 +580,12 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different ',
+        assert len(lb) == len(ub), ('Lower and upper bounds have different '
                        '#s of design variables in cont_crossover function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s ',
+        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
                          'of design variables in cont_crossover function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be ',
-             'consistent with the size of the variable ID truth vector ({}) ',
+        assert len(lb) == len(varID), ('The bounds size ({}) must be '
+             'consistent with the size of the variable ID truth vector ({}) '
                 'in cont_crossover function.').format(len(lb), len(varID))
 
         # If no discretes variables exist, set ID array to zero
@@ -642,12 +643,12 @@ class GnoweeHeuristics(object):
             design variables representing the updated design parameters.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different ',
+        assert len(lb) == len(ub), ('Lower and upper bounds have different '
                        '#s of design variables in mutate function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s ',
+        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
                          'of design variables in mutate function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be ',
-             'consistent with the size of the variable ID truth vector ({}) ',
+        assert len(lb) == len(varID), ('The bounds size ({}) must be '
+             'consistent with the size of the variable ID truth vector ({}) '
                 'in mutate function.').format(len(lb), len(varID))
 
         children = []
@@ -692,9 +693,9 @@ def simple_bounds(child, lb, ub):
         boundaries. \n
     """
 
-    assert len(lb) == len(ub), ('Lower and upper bounds have different #s of ',
+    assert len(lb) == len(ub), ('Lower and upper bounds have different #s of '
                          'design variables in simple_bounds function.')
-    assert len(lb) == len(child), ('Bounds and child have different #s of ',
+    assert len(lb) == len(child), ('Bounds and child have different #s of '
                          'design variables in simple_bounds function.')
 
     #Apply lower bound
@@ -731,9 +732,9 @@ def rejection_bounds(parent, child, stepSize, lb, ub):
         boundaries. \n
     """
 
-    assert len(lb) == len(ub), ('Lower and upper bounds have different #s of ',
+    assert len(lb) == len(ub), ('Lower and upper bounds have different #s of '
                          'design variables in rejection_bounds function.')
-    assert len(lb) == len(child), ('Bounds and child have different #s of ',
+    assert len(lb) == len(child), ('Bounds and child have different #s of '
                          'design variables in rejection_bounds function.')
 
     for i in range(0, len(child), 1):

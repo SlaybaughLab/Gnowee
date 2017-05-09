@@ -49,13 +49,13 @@ def initial_samples(lb, ub, method, numSamp):
     @return \e array: The list of coordinates for the sampled phase space. \n
     """
 
-    assert len(lb) == len(ub), ('Lower and upper bounds have different #s ',
+    assert len(lb) == len(ub), ('Lower and upper bounds have different #s '
                            'of design variables in initial_samples function.')
     assert method == 'random' or method == 'nolh' or method == 'nolh-rp' \
-           or method == 'nolh-cdr' or method == 'lhc', ('An invalid method ',
+           or method == 'nolh-cdr' or method == 'lhc', ('An invalid method '
                                      'was specified for the initial_samples.')
     if method == 'nolh' or method == 'nolh-rp' or method == 'nolh-cdr':
-        assert len(ub) >= 2 and len(ub) <= 29, ('The Phase space dimensions ',
+        assert len(ub) >= 2 and len(ub) <= 29, ('The Phase space dimensions '
                              'are outside of the bounds for initial_samples.')
 
     for case in of.switch(method):
