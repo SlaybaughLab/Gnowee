@@ -27,7 +27,6 @@ import copy as cp
 from math import sqrt
 from numpy.random import rand, permutation
 from Sampling import levy, tlf, initial_samples
-from GnoweeUtilities import rejection_bounds, simple_bounds
 
 #------------------------------------------------------------------------------#
 class GnoweeHeuristics(object):
@@ -674,3 +673,76 @@ class GnoweeHeuristics(object):
             children.append(simple_bounds(tmp, lb, ub))
 
         return children
+
+#------------------------------------------------------------------------------#
+def simple_bounds(child, lb, ub):
+    """!
+    @ingroup GnoweeHeuristics
+    Application of problem boundaries to generated solutions. If outside of the
+    boundaries, the variable defaults to the boundary.
+
+    @param child: \e array \n
+        The proposed new system designs. \n
+    @param lb: \e array \n
+        The lower bounds of the design variable(s). \n
+    @param ub: \e array \n
+        The upper bounds of the design variable(s). \n
+
+    @return \e array: The new system design that is within problem
+        boundaries. \n
+    """
+
+    assert len(lb) == len(ub), 'Lower and upper bounds have different #s of \
+                         design variables in rejection_bounds function.'
+    assert len(lb) == len(child), 'Bounds and child have different #s of \
+                         design variables in mutaterejection_boundsfunction.'
+
+    #Apply lower bound
+    for i in range(0, len(child), 1):
+        if child[i] < lb[i]:
+            child[i] = lb[i]
+
+    #Apply upper bound
+    for i in range(0, len(child), 1):
+        if child[i] > ub[i]:
+            child[i] = ub[i]
+
+    return child
+
+#------------------------------------------------------------------------------#
+def rejection_bounds(parent, child, stepSize, lb, ub):
+    """!
+    @ingroup GnoweeHeuristics
+    Application of problem boundaries to generated solutions. Adjusts step size
+    for all rejected solutions until within the boundaries.
+
+    @param parent: \e array \n
+        The current system designs. \n
+    @param child: \e array \n
+        The proposed new system designs. \n
+    @param stepSize: \e float \n
+        The stepsize for the permutation. \n
+    @param lb: \e array \n
+        The lower bounds of the design variable(s). \n
+    @param ub: \e array \n
+        The upper bounds of the design variable(s). \n
+
+    @return \e array: The new system design that is within problem
+        boundaries. \n
+    """
+
+    assert len(lb) == len(ub), 'Lower and upper bounds have different #s of \
+                         design variables in rejection_bounds function.'
+    assert len(lb) == len(child), 'Bounds and child have different #s of \
+                         design variables in mutaterejection_boundsfunction.'
+
+    for i in range(0, len(child), 1):
+        stepReductionCount = 0
+        while child[i] < lb[i] or child[i] > ub[i]:
+            if stepReductionCount >= 5:
+                child[i] = cp.copy(parent[i])
+            else:
+                stepSize[i] = stepSize[i]/2.0
+                child[i] = child[i]-stepSize[i]
+                stepReductionCount += 1
+    return child
