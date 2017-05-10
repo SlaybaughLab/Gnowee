@@ -21,12 +21,12 @@ import argparse
 import random
 
 import matplotlib.pyplot as plt
-import ObjectiveFunctions as of
 import numpy as np
 
 from scipy.special import gamma
 from pyDOE import lhs
 from numpy.random import rand, randn
+from GnoweeUtilities import Switch
 
 #------------------------------------------------------------------------------#
 def initial_samples(lb, ub, method, numSamp):
@@ -58,7 +58,7 @@ def initial_samples(lb, ub, method, numSamp):
         assert len(ub) >= 2 and len(ub) <= 29, ('The Phase space dimensions '
                              'are outside of the bounds for initial_samples.')
 
-    for case in of.switch(method):
+    for case in Switch(method):
         if case('random'):
             s = np.zeros((numSamp, len(lb)))
             for i in range(0, numSamp, 1):

@@ -20,10 +20,11 @@ included in the src directory.
 \sa Gnowee
 \sa GnoweeHeuristics
 \sa GnoweeUtilities
-\sa ObjectiveFunctions
+\sa ObjectiveFunction
+\sa Constraints
 \sa OptiPlot
 \sa Sampling
 """
 
-__all__ = ["Gnowee", "Gnoweeheuristics", "GnoweeUtilities",
-           "ObjectiveFunctions", "OptiPlot", "Sampling", "Utilities"]
+__all__ = ["Gnowee", "Gnoweeheuristics", "GnoweeUtilities", "Constraints",
+           "ObjectiveFunction", "OptiPlot", "Sampling"]

@@ -72,7 +72,8 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
         the tickness and diameter of a cylinder that take standard values, the
         discreteVals could be specified as: \n
         discreteVals = [[0.125, 0.25, 0.375], [0.25, 0.5, 075]] \n
-        Gnowee will then map the optimization results to these allowed values.
+        Gnowee will then map the optimization results to these allowed
+        values. \n
 
     @return \e list: List for design event objects for the current top solution
         vs generation. Only stores the information when new optimal designs are
@@ -100,9 +101,10 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
                  if 'b' in varType else -1,
                len(varType) - 1 - varType[::-1].index('i') \
                  if 'i' in varType else -1) \
-                < varType.index('d'), ('The discrete variables must be '
-                'specified after the continuous, binary, and integer variables.'
-                ' The order given was {}'.format(varType))
+                < varType.index('d') if 'd' in varType else len(varType), ('The'
+                ' discrete variables must be  specified after the continuous, '
+                'binary, and integer variables. The order given was {}'.format(
+                varType))
     assert len(lb) == len(ub), ('The lower and upper bounds must have the same '
                 'dimensions. lb = {}, ub = {}'.format(len(lb), len(ub)))
     assert set(varType).issubset(['c', 'i', 'd', 'x', 'f']), ('The variable '
