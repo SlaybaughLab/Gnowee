@@ -25,8 +25,6 @@ import numpy as np
 
 from numpy.random import rand
 
-#from GnoweeHeuristics import disc_levy_flight, cont_levy_flight, crossover,
-#                             cont_crossover, mutate, scatterSearch, initialize
 from GnoweeUtilities import Parent, Get_Best
 
 #------------------------------------------------------------------------------#
@@ -63,7 +61,7 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
                at least two variables denoted as combinatorial. \n
          'f' = fixed design variable. Will not be considered of any
                permutation. \n
-    @param: gh: <em> GnoweeHeuristic object </em> \n
+    @param gh: <em> GnoweeHeuristic object </em> \n
         An object constaining the settings and methods required for the
         Gnowee optimization algorithm. \n
     @param discreteVals: <em> list of list(s) </em> \n
@@ -127,6 +125,8 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
     # Initialize population with random initial solutions
     initNum = max(gh.population*2, len(ub)*10)
     initParams = gh.initialize(initNum, gh.initSampling, lb, ub, varType)
+    initNum = min(initNum, len(initParams))
+    print initNum, len(initParams), len(initParams[0])
     for p in range(0, initNum, 1):
         pop.append(Parent(fitness=1E99, variables=initParams[p]))
 
@@ -160,7 +160,10 @@ def main(func, lb, ub, varType, gh, discreteVals=[]):
     # Calculate initial fitness values and trim population to gh.population
     (pop, changes, timeline) = Get_Best(func, pop, [p.variables for p in pop],
                                         lb, ub, varType, timeline, gh, 1)
-    pop = pop[0:gh.population]
+    if len(pop) > gh.population:
+        pop = pop[0:gh.population]
+    else:
+        gh.population = len(pop)
 
     # Set initial heuristic probabilities
     fd = gh.fracDiscovered

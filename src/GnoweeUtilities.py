@@ -173,7 +173,7 @@ class ProblemParameters(object):
             The lower bounds of the design variable(s). Only enter the bounds
             for continuous and integer/binary variables. The order must match
             the order specified in varType and ub. \n
-        @param upperbounds: \e array \n
+        @param upperBounds: \e array \n
             The upper bounds of the design variable(s). Only enter the bounds
             for continuous and integer/binary variables. The order must match
             the order specified in varType and lb. \n

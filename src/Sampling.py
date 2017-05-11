@@ -261,8 +261,12 @@ def NOLH(conf, remove=None):
 
     Constructs a Nearly Orthogonal Latin Hypercube (NOLH) of order *m* from
     a configuration vector *conf*. The configuration vector may contain either
-    the numbers in $[0 q-1]$ or $[1 q]$ where  $q = 2^{m-1}$. The columns to
-    be *removed* are also in $[0 d-1]$ or $[1 d]$ where $d = m+\binom{m-1}{2}$
+    the numbers in $ [0 q-1] $ or $ [1 q] $ where $ q = 2^{m-1} $.
+    The columns to be *removed* are also in $ [0 d-1] $ or $ [1 d] $ 
+    where 
+    
+    $ d = m + \binom{m-1}{2} $
+    
     is the NOLH dimensionality.
 
     The whole library is incorporated here with minimal modification for
@@ -289,7 +293,7 @@ def NOLH(conf, remove=None):
 
     q = len(conf)
     m = math.log(q, 2) + 1
-    s = m + (math.factorial(m - 1) / (2 * math.factorial(m - 3)))
+    s = int(m + (math.factorial(m - 1) / (2 * math.factorial(m - 3))))
 
     # Factorial checks if m is an integer
     m = int(m)
@@ -305,6 +309,7 @@ def NOLH(conf, remove=None):
 
         A[:, :, i-1] = Ai
 
+    print q, s
     M = np.zeros((q, s), dtype=int)
     M[:, 0] = conf
 
@@ -363,17 +368,6 @@ def params(dim):
         q = 2**(m-1)
 
     return m, q, s - dim
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=("Compute a Nearly "
-        "Orthogonal Latin hypercube from a configuration vector."))
-    parser.add_argument("conf", metavar="C", type=int, nargs="+",
-        help="The configuration vector given as a list N1 N2 ... Nm")
-    parser.add_argument("-r", "--remove", metavar="R", type=int, nargs="+",
-        help="Columns to remove as a list N1 N2 ... Nm")
-
-    args = parser.parse_args()
-    print NOHL(conf=args.conf, remove=args.remove)
 
 #------------------------------------------------------------------------------#
 def get_cdr_permutations(dim):
