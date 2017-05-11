@@ -309,7 +309,6 @@ def NOLH(conf, remove=None):
 
         A[:, :, i-1] = Ai
 
-    print q, s
     M = np.zeros((q, s), dtype=int)
     M[:, 0] = conf
 

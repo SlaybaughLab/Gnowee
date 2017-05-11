@@ -27,9 +27,10 @@ import copy as cp
 from math import sqrt
 from numpy.random import rand, permutation
 from Sampling import levy, tlf, initial_samples
+from GnoweeUtilities import ProblemParameters, Event
 
 #------------------------------------------------------------------------------#
-class GnoweeHeuristics(object):
+class GnoweeHeuristics(ProblemParameters):
     """!
     @ingroup GnoweeHeuristics
     The class is the foundation of the Gnowee optimization algorithm.  It sets
@@ -41,7 +42,7 @@ class GnoweeHeuristics(object):
                  fracElite=0.2, fracLevy=0.2, alpha=1.5, gamma=1, n=1,
                  scalingFactor=10.0, penalty=0.0, maxGens=20000,
                  maxFevals=200000, convTol=1e-6, stallLimit=225,
-                 optimalFitness=0, optConvTol=1e-2):
+                 optConvTol=1e-2, **kwargs):
         """!
         Constructor to build the GnoweeHeuristics class.
 
@@ -97,13 +98,17 @@ class GnoweeHeuristics(object):
         @param stallLimit: \e integer \n
             The maximum number of generations to search without a descrease
             exceeding convTol. \n
-        @param optimalFitness: \e float \n
-            The best know fitness value for the problem considered used to test
-            for convergence. \n
         @param optConvTol: \e float \n
             The maximum deviation from the best know fitness value before the
             search terminates. \n
+        @param kwargs: <em> ProblemParameters class arguments </em> \n
+            Keyword arguments for the attributes of the ProblemParameters
+            class. If not provided. The inhereted attributes will be set to the
+            class defaults. \n
         """
+
+        # Initialize base ProblemParameters class
+        ProblemParameters.__init__(self, **kwargs)
 
         ## @var population
         # \e integer
@@ -191,12 +196,6 @@ class GnoweeHeuristics(object):
         # exceeding convTol.
         self.stallLimit = stallLimit
 
-        ## @var optimalFitness
-        # \e float
-        # The best know fitness value for the problem considered used to test
-        # for convergence.
-        self.optimalFitness = optimalFitness
-
         ## @var optConvTol
         # \e float
         # The maximum deviation from the best know fitness value before the
@@ -212,21 +211,21 @@ class GnoweeHeuristics(object):
         """
         return "GnoweeHeuristics({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, \
                                  {}, {}, {}, {}, {})".format(self.population,
-                                                            self.initSampling,
-                                                            self.fracDiscovered,
-                                                            self.fracElite,
-                                                            self.fracLevy,
-                                                            self.alpha,
-                                                            self.gamma,
-                                                            self.n,
-                                                            self.scalingFactor,
-                                                            self.penalty,
-                                                            self.maxGens,
-                                                            self.maxFevals,
-                                                            self.convTol,
-                                                            self.stallLimit,
-                                                            self.optimalFitness,
-                                                            self.optConvTol)
+                                                  self.initSampling,
+                                                  self.fracDiscovered,
+                                                  self.fracElite,
+                                                  self.fracLevy,
+                                                  self.alpha,
+                                                  self.gamma,
+                                                  self.n,
+                                                  self.scalingFactor,
+                                                  self.penalty,
+                                                  self.maxGens,
+                                                  self.maxFevals,
+                                                  self.convTol,
+                                                  self.stallLimit,
+                                                  self.optConvTol,
+                                                  ProblemParameters.__repr__())
 
     def __str__(self):
         """!
@@ -235,8 +234,7 @@ class GnoweeHeuristics(object):
         @param self: <em> GnoweeHeuristics pointer </em> \n
             The GnoweeHeuristics pointer. \n
         """
-
-        header = ["GnoweeHeuristics:"]
+        header = ["  GnoweeHeuristics:"]
         header += ["Population = {}".format(self.population)]
         header += ["Sampling Method = {}".format(self.initSampling)]
         header += ["Discovery Fraction = {}".format(self.fracDiscovered)]
@@ -251,11 +249,12 @@ class GnoweeHeuristics(object):
         header += ["Max # of Function Evaluations = {}".format(self.maxFevals)]
         header += ["Convergence Tolerance = {}".format(self.convTol)]
         header += ["Stall Limit = {}".format(self.stallLimit)]
-        header += ["Optimal Fitness = {}".format(self.optimalFitness)]
         header += ["Optimal Convergence Tolerance = {}".format(self.optConvTol)]
+        header += ["  Attributes Inhereted from ProblemParameters:"]
+        header += ["{}".format(ProblemParameters.__str__(self))]
         return "\n".join(header)+"\n"
 
-    def initialize(self, numSamples, sampleMethod, lb, ub, varType):
+    def initialize(self, numSamples, sampleMethod):
         """!
         Initialize the population according to the sampling method chosen.
 
@@ -287,13 +286,14 @@ class GnoweeHeuristics(object):
         @return <em> list of arrays: </em> The initialized set of samples.
         """
 
-        initSamples = initial_samples(lb, ub, sampleMethod, numSamples)
-        for var in range(len(varType)):
-            if varType[var] == 'i' or varType[var] == 'd':
+        initSamples = initial_samples(self.lb, self.ub, sampleMethod,
+                                      numSamples)
+        for var in range(len(self.varType)):
+            if self.varType[var] == 'i' or self.varType[var] == 'd':
                 initSamples[:, var] = np.rint(initSamples[:, var])
         return initSamples
 
-    def disc_levy_flight(self, pop, lb, ub, varID):
+    def disc_levy_flight(self, pop):
         """!
         Generate new children using truncated Levy flights permutation of
         current generation design parameters according to:
@@ -309,14 +309,6 @@ class GnoweeHeuristics(object):
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
-        @param lb: \e array \n
-            The lower bounds of the design variable(s). \n
-        @param ub: \e array \n
-            The upper bounds of the design variable(s). \n
-        @param varID: \e array \n
-            A truth array indicating the location of the variables to be
-            permuted. If the variable is to be permuted, a 1 is inserted at
-            the variable location; otherwise a 0. \n
 
         @return <em> list of arrays: </em>   The proposed children sets of
             design variables representing the updated design parameters.
@@ -324,15 +316,8 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different '
-                       '#s of design variables in disc_levy_flight function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
-                         'of design variables in disc_levy_flight function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be '
-             'consistent with the size of the variable ID truth vector ({}) '
-                'in disc_levy_flight function.').format(len(lb), len(varID))
-
         children = [] # Local copy of children generated
+        varID = self.iID+self.dID
 
         # Determine step size using Levy Flight
         step = tlf(len(pop), len(pop[0]), alpha=self.alpha, gam=self.gamma)
@@ -347,18 +332,18 @@ class GnoweeHeuristics(object):
             children.append(cp.deepcopy(pop[k]))
 
             #Calculate Levy flight
-            stepSize = np.round(step[k, :]*varID*(ub-lb))
+            stepSize = np.round(step[k, :]*varID*(self.ub-self.lb))
             if all(stepSize == 0):
-                stepSize = np.round(rand(len(varID))*(ub-lb))*varID
-            children[i] = (children[i]+stepSize)%(ub+1-lb)
+                stepSize = np.round(rand(len(varID))*(self.ub-self.lb))*varID
+            children[i] = (children[i]+stepSize)%(self.ub+1-self.lb)
 
             #Build child applying variable boundaries
-            children[i] = rejection_bounds(pop[k], children[i], stepSize, lb,
-                                           ub)
+            children[i] = rejection_bounds(pop[k], children[i], stepSize,
+                                           self.lb, self.ub)
 
         return children, used
 
-    def cont_levy_flight(self, pop, lb, ub, varID):
+    def cont_levy_flight(self, pop):
         """!
         Generate new children using Levy flights permutation of current
         generation design parameters according to:
@@ -375,14 +360,6 @@ class GnoweeHeuristics(object):
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
-        @param lb: \e array \n
-            The lower bounds of the design variable(s). \n
-        @param ub: \e array \n
-            The upper bounds of the design variable(s). \n
-        @param varID: \e array \n
-            A truth array indicating the location of the variables to be
-            permuted. If the variable is to be permuted, a 1 is inserted at
-            the variable location; otherwise a 0. \n
 
         @return <em> list of arrays: </em>   The proposed children sets of
             design variables representing the updated design parameters.
@@ -390,15 +367,8 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different '
-                       '#s of design variables in cont_levy_flight function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
-                         'of design variables in cont_levy_flight function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be '
-             'consistent with the size of the variable ID truth vector ({}) '
-                'in cont_levy_flight function.').format(len(lb), len(varID))
-
         children = [] # Local copy of children generated
+        varID = self.cID
 
         # Determine step size using Levy Flight
         step = levy(len(pop[0]), len(pop), alpha=self.alpha, gam=self.gamma,
@@ -418,12 +388,12 @@ class GnoweeHeuristics(object):
             children[i] = children[i]+stepSize
 
             #Build child applying variable boundaries
-            children[i] = rejection_bounds(pop[k], children[i], stepSize, lb,
-                                           ub)
+            children[i] = rejection_bounds(pop[k], children[i], stepSize,
+                                           self.lb, self.ub)
 
         return children, used
 
-    def scatter_search(self, pop, lb, ub, varID, intDiscID=None):
+    def scatter_search(self, pop):
         """!
         Generate new designs using the scatter search heuristic according to:
 
@@ -453,19 +423,6 @@ class GnoweeHeuristics(object):
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
-        @param lb: \e array \n
-            The lower bounds of the design variable(s). \n
-        @param ub: \e array \n
-            The upper bounds of the design variable(s). \n
-        @param varID: \e array \n
-            A truth array indicating the location of the variables to be
-            permuted. If the variable is to be permuted, a 1 is inserted at
-            the variable location; otherwise a 0. \n
-        @param intDiscID: \e array \n
-            A truth array indicating the location of the discrete variable.
-            A 1 is inserted at the discrete variable location; otherwise a
-            0. If no discrete variables, the array will be set to 0
-            automatically. \n
 
         @return <em> list of arrays: </em>   The proposed children sets of
             design variables representing the updated design parameters.
@@ -473,17 +430,9 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different '
-                       '#s of design variables in scatter_search function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
-                         'of design variables in scatter_search function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be '
-             'consistent with the size of the variable ID truth vector ({}) '
-                'in scatter_search function.').format(len(lb), len(varID))
-
-        # If no discretes variables exist, set ID array to zero
-        if len(intDiscID) != len(varID):
-            intDiscID = np.zeros_like(varID)
+        # Update vectors
+        intDiscID = self.iID+self.dID
+        varID = self.cID
 
         # Use scatter search to generate candidate children solutions
         children = []
@@ -509,7 +458,7 @@ class GnoweeHeuristics(object):
             tmp = tmp*varID+np.round(tmp*intDiscID)
 
             #Build child applying variable boundaries
-            children.append(simple_bounds(tmp, lb, ub))
+            children.append(simple_bounds(tmp, self.lb, self.ub))
 
         return children, used
 
@@ -547,7 +496,7 @@ class GnoweeHeuristics(object):
 
         return children
 
-    def crossover(self, pop, lb, ub, varID, intDiscID=None):
+    def crossover(self, pop):
         """!
         Generate new children using distance based crossover strategies on
         the top parent. Ideas adapted from Walton "Modified Cuckoo Search: A
@@ -560,19 +509,6 @@ class GnoweeHeuristics(object):
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
-        @param lb: \e array \n
-            The lower bounds of the design variable(s). \n
-        @param ub: \e array \n
-            The upper bounds of the design variable(s). \n
-        @param varID: \e array \n
-            A truth array indicating the location of the variables to be
-            permuted. If the variable is to be permuted, a 1 is inserted at
-            the variable location; otherwise a 0. \n
-        @param intDiscID: \e array \n
-            A truth array indicating the location of the discrete variable.
-            A 1 is inserted at the discrete variable location; otherwise a
-            0. If no discrete variables, the array will be set to 0
-            automatically. \n
 
         @return <em> list of arrays: </em>   The proposed children sets of
             design variables representing the updated design parameters.
@@ -580,17 +516,9 @@ class GnoweeHeuristics(object):
             each child.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different '
-                       '#s of design variables in cont_crossover function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
-                         'of design variables in cont_crossover function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be '
-             'consistent with the size of the variable ID truth vector ({}) '
-                'in cont_crossover function.').format(len(lb), len(varID))
-
-        # If no discretes variables exist, set ID array to zero
-        if len(intDiscID) != len(varID):
-            intDiscID = np.zeros_like(varID)
+        # Update vectors
+        intDiscID = self.iID+self.dID
+        varID = self.cID
 
         # Initialize variables
         goldenRatio = (1.+sqrt(5))/2.
@@ -608,11 +536,11 @@ class GnoweeHeuristics(object):
             children.append(cp.deepcopy(pop[r]))
             dx = abs(pop[i]-children[i])/goldenRatio
             children[i] = children[i]+dx*varID+np.round(dx*intDiscID)
-            children[i] = simple_bounds(children[i], lb, ub)
+            children[i] = simple_bounds(children[i], self.lb, self.ub)
 
         return children, used
 
-    def mutate(self, pop, lb, ub, varID, intDiscID=None):
+    def mutate(self, pop):
         """!
         Generate new children by adding a weighted difference between two
         population vectors to a third vector.  Ideas adapted from Storn,
@@ -625,37 +553,16 @@ class GnoweeHeuristics(object):
         @param pop: <em> list of arrays </em> \n
             The current parent sets of design variables representing system
             designs for the population. \n
-        @param lb: \e array \n
-            The lower bounds of the design variable(s). \n
-        @param ub: \e array \n
-            The upper bounds of the design variable(s). \n
-        @param varID: \e array \n
-            A truth array indicating the location of the variables to be
-            permuted. If the variable is to be permuted, a 1 is inserted at
-            the variable location; otherwise a 0. \n
-        @param intDiscID: \e array \n
-            A truth array indicating the location of the discrete variable.
-            A 1 is inserted at the discrete variable location; otherwise a
-            0. If no discrete variables, the array will be set to 0
-            automatically. \n
 
         @return <em> list of arrays: </em>   The proposed children sets of
             design variables representing the updated design parameters.
         """
 
-        assert len(lb) == len(ub), ('Lower and upper bounds have different '
-                       '#s of design variables in mutate function.')
-        assert len(lb) == len(pop[0]), ('Bounds and pop have different #s '
-                         'of design variables in mutate function.')
-        assert len(lb) == len(varID), ('The bounds size ({}) must be '
-             'consistent with the size of the variable ID truth vector ({}) '
-                'in mutate function.').format(len(lb), len(varID))
+        # Update vectors
+        intDiscID = self.iID+self.dID
+        varID = self.cID
 
         children = []
-
-        # If no discretes variables exist, set ID array to zero
-        if len(intDiscID) != len(varID):
-            intDiscID = np.zeros_like(varID)
 
         #Discover (1-fd); K is a status vector to see if discovered
         k = rand(len(pop), len(pop[0])) > self.fracDiscovered
@@ -670,10 +577,157 @@ class GnoweeHeuristics(object):
             n = np.array((childn1[j]-childn2[j]))
             stepSize = r*n*varID+(n*intDiscID).astype(int)
             tmp = (pop[j]+stepSize*k[j, :])*varID+(pop[j]+stepSize*k[j, :]) \
-                   *intDiscID%(ub+1-lb)
-            children.append(simple_bounds(tmp, lb, ub))
+                   *intDiscID%(self.ub+1-self.lb)
+            children.append(simple_bounds(tmp, self.lb, self.ub))
 
         return children
+
+    def population_update(self, parents, children, objFunc, constraints=None,
+                          timeline=None, genUpdate=0, adoptedParents=[],
+                          mhFrac=0.0, randomParents=False):
+        """!
+        Calculate fitness, apply constraints, if present, and update the
+        population if the children are better than their parents. Several
+        optional inputs are available to modify this process. Refer to the
+        input param documentation for more details.
+
+        @param parents: <em> list of parent objects </em> \n
+            The current parents representing system designs. \n
+        @param children: <em> list of arrays </em> \n
+            The children design variables representing new system designs. \n
+        @param objFunc: \e function \n
+            The objective function used to evaluate the children in comparison
+            to the parents.  This assumes a minimization process. \n
+        @param constraints: <em> list of Constraint objects </em> \n
+            Constraint objects used to bound the system design space. \n
+        @param timeline: <em> list of history objects </em> \n
+            The histories of the optimization process containing best design,
+            fitness, generation, and function evaluations. \n
+        @param genUpdate: \e integer \n
+            Indicator for how many generations to increment the counter by.
+            Genenerally 0 or 1. \n
+        @param adoptedParents: \e list \n
+            A list of alternative parents to compare the children against.
+            This alternative parents are then held accountable for not being
+            better than the children of others. \n
+        @param mhFrac: \e float \n
+            The Metropolis-Hastings fraction.  A fraction of the otherwise
+            discarded parents will be evaluated for acceptance against the
+            greater population. \n
+        @param randomParents: \e boolean \n
+            If True, a random parent will be selected for comparison to the
+            children. No one is safe. \n
+
+        @return <em> list of parent objects: </em> The current parents
+            representing system designs. \n
+        @return \e integer:  The number of replacements made. \n
+        @return <em> list of history objects: </em> If an initial timeline was
+            provided, retunrs an updated history of the optimization process
+            containing best design, fitness, generation, and function
+            evaluations.
+        """
+
+        #Test input values for consistency
+        assert hasattr(objFunc, '__call__'), 'Invalid function handle'
+
+        if self.dID != []:
+            assert np.sum(self.dID) == len(self.discreteVals), ('A map must '
+                       'exist for each discrete variable. {} discrete '
+                       'variables, and {} maps provided.'.format(
+                        np.sum(self.dID), len(self.discreteVals)))
+
+        # Track # of replacements to track effectiveness of search methods
+        replace = 0
+
+        # Find worst fitness to use as the penalty
+        for i in range(0, len(children), 1):
+            (fnew, gnew) = objFunc(children[i], penalty=0)
+            if fnew > self.penalty:
+                self.penalty = fnew
+
+        # Calculate fitness; replace parents if child has better fitness
+        feval = 0
+        for i in range(0, len(children), 1):
+            if randomParents:
+                j = int(rand()*len(parents))
+            elif len(adoptedParents) == len(children):
+                j = adoptedParents[i]
+            else:
+                j = i
+            (fnew, gnew) = objFunc(children[i], penalty=self.penalty)
+            feval += 1
+            if fnew < parents[j].fitness:
+                parents[j].fitness = fnew
+                parents[j].variables = cp.copy(children[i])
+                parents[i].changeCount += 1
+                parents[i].stallCount = 0
+                replace += 1
+                if parents[i].changeCount >= 25 and \
+                      j >= self.population*self.fracElite:
+                    parents[i].variables = self.initialize(1, 'random'
+                                                          ).flatten()
+                    (fnew, gnew) = objFunc(parents[i].variables,
+                                           penalty=self.penalty)
+                    parents[i].fitness = fnew
+                    parents[i].changeCount = 0
+            else:
+                parents[j].stallCount += 1
+                if parents[j].stallCount > 50000 and j != 0:
+                    parents[i].variables = self.initialize(1, 'random'
+                                                          ).flatten()
+                    (fnew, gnew) = objFunc(parents[i].variables,
+                                           penalty=self.penalty)
+                    parents[i].fitness = fnew
+                    parents[i].changeCount = 0
+                    parents[i].stallCount = 0
+
+                # Metropis-Hastings algorithm
+                r = int(rand()*len(parents))
+                if r <= mhFrac:
+                    r = int(rand()*len(parents))
+                    if fnew < parents[r].fitness:
+                        parents[r].fitness = fnew
+                        parents[r].variables = cp.copy(children[i])
+                        parents[r].changeCount += 1
+                        parents[r].stallCount += 1
+                        replace += 1
+
+        #Sort the pop
+        parents.sort(key=lambda x: x.fitness)
+
+        # Map the discrete variables for storage
+        if self.dID != []:
+            dVec = []
+            i = 0
+            for j in range(len(self.dID)):
+                if self.dID[j] == 1:
+                    dVec.append(self.discreteVals[i][int(
+                                parents[0].variables[j])])
+                    i += 1
+                else:
+                    dVec.append(parents[0].variables[j])
+        else:
+            dVec = cp.copy(parents[0].variables)
+
+        # If timeline provided, store history on timeline if new optimal
+        # design found
+        if timeline != None:
+            if len(timeline) < 2:
+                timeline.append(Event(len(timeline)+1, feval,
+                                      parents[0].fitness, dVec))
+            elif parents[0].fitness < timeline[-1].fitness \
+                  and abs((timeline[-1].fitness-parents[0].fitness) \
+                          /parents[0].fitness) > self.convTol:
+                timeline.append(Event(timeline[-1].generation+1,
+                                      timeline[-1].evaluations+feval,
+                                      parents[0].fitness, dVec))
+            else:
+                timeline[-1].generation += genUpdate
+                timeline[-1].evaluations += feval
+
+            return (parents, replace, timeline)
+        else:
+            return (parents, replace)
 
 #------------------------------------------------------------------------------#
 def simple_bounds(child, lb, ub):

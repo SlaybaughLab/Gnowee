@@ -204,8 +204,10 @@ class ObjectiveFunction(object):
                              'only those 3 parameters.')
 
         # Set variables
-        diams = ProblemParameters().get_preset_params('mi_spring',
-                                                      'Gnowee').discreteVals[0]
+        tmp = ProblemParameters()
+        tmp.set_preset_params('mi_spring', 'Gnowee')
+        diams = tmp.discreteVals[0]
+
         D = u[0]
         N = u[1]
         d = diams[int(u[2])]
@@ -381,8 +383,9 @@ class ObjectiveFunction(object):
                              'parameters.')
 
         # Set variables
-        thickness = ProblemParameters().get_preset_params('mi_pressure_vessel',
-                                                      'Gnowee').discreteVals[0]
+        tmp = ProblemParameters()
+        tmp.set_preset_params('mi_pressure_vessel', 'Gnowee')
+        thickness = tmp.discreteVals[0]
         R = u[0]
         L = u[1]
         ts = thickness[int(u[2])]

@@ -165,8 +165,10 @@ class ProblemParameters(object):
 
     def __init__(self, lowerBounds=[], upperBounds=[], varType=[],
                  discreteVals=[], optimum=0.0, pltTitle='', histTitle='',
-                 varNames=''):
+                 varNames=['']):
         """!
+        Constructor for the ProblemParameters class. 
+
         @param self: <em> pointer </em> \n
             The ProblemParameters pointer. \n
         @param lowerBounds: \e array \n
@@ -183,7 +185,7 @@ class ProblemParameters(object):
             are specified separatly from the lb/ub throught the discreteVals
             optional input. A variable can have two types (for example, 'dx'
             could denote a layer that can take multiple materials and be placed
-            at multiple design locations) \n
+            at multiple design locations). \n
             Allowed values: \n
              'c' = continuous over a given range (range specified in lb &
                    ub). \n
@@ -251,6 +253,60 @@ class ProblemParameters(object):
         # optimization problem.
         self.varNames = varNames
 
+        # Ensure that the correct inputs were provided; modify as neccesary
+        # to meet Gnowee's requirements;
+        # Populate variable type id vectors
+        if len(self.lb) and len(self.ub) and len(self.varType) != 0 \
+                        or len(self.discreteVals) and len(varType) != 0:
+            self.sanitize_inputs()
+
+            ## @var cID:
+            # \e array: The continuous variable truth array. This contains
+            # a one in the positions corresponding to continuous variables
+            # and 0 otherwise.
+            self.cID = []
+
+            ## @var iID:
+            # \e array: The continuous variable truth array. This contains
+            # a one in the positions corresponding to continuous variables
+            # and 0 otherwise.
+            self.iID = []
+
+            ## @var dID:
+            # \e array: The continuous variable truth array. This contains
+            # a one in the positions corresponding to continuous variables
+            # and 0 otherwise.
+            self.dID = []
+
+            ## @var xID:
+            # \e array: The continuous variable truth array. This contains
+            # a one in the positions corresponding to continuous variables
+            # and 0 otherwise.
+            self.xID = []
+
+            # Develop ID vectors for each variable type
+            for var in range(len(self.varType)):
+                if 'c' in self.varType[var]:
+                    self.cID.append(1)
+                else:
+                    self.cID.append(0)
+                if 'i' in self.varType[var]:
+                    self.iID.append(1)
+                else:
+                    self.iID.append(0)
+                if 'd' in self.varType[var]:
+                    self.dID.append(1)
+                else:
+                    self.dID.append(0)
+                if 'x' in self.varType[var]:
+                    self.xID.append(1)
+                else:
+                    self.xID.append(0)
+            self.cID = np.array(self.cID)
+            self.iID = np.array(self.iID)
+            self.dID = np.array(self.dID)
+            self.xID = np.array(self.xID)
+
     def __repr__(self):
         """!
         ProblemParameters class attribute print function.
@@ -287,7 +343,57 @@ class ProblemParameters(object):
         header += ["Variable Names: {}".format(self.varNames)]
         return "\n".join(header)+"\n"
 
-    def get_preset_params(self, funct, algorithm='', dimension=2):
+    def sanitize_inputs(self):
+        """!
+        Checks and cleans user inputs to be compatible with expectations from
+        the Gnowee algorithm.
+
+        @param self: \e pointer \n
+            The ProblemParameters pointer. \n
+        """
+
+        # Check input variables
+        assert self.varType.count('d') == len(self.discreteVals), ('The '
+                            'allowed discrete  values must be specified for '
+                            'each discrete variable. {} in varType, but {} in '
+                            'discreteVals.'.format(self.varType.count('d'),
+                                                   len(self.discreteVals)))
+        assert self.varType.count('c') + self.varType.count('b') + \
+               self.varType.count('i') == len(self.ub), ('Each specified '
+                            'continuous, binary, and integer variable must '
+                            'have a corresponding upper and lower bounds. {} '
+                            'variables and {} bounds specified'.format(
+                             self.varType.count('c') + self.varType.count('b') \
+                             + self.varType.count('i'), len(self.lb)))
+        assert max(len(self.varType) - 1 - self.varType[::-1].index('c') \
+                     if 'c' in self.varType else -1,
+                   len(self.varType) - 1 - self.varType[::-1].index('b') \
+                     if 'b' in self.varType else -1,
+                   len(self.varType) - 1 - self.varType[::-1].index('i') \
+                     if 'i' in self.varType else -1) \
+                    < self.varType.index('d') if 'd' in self.varType else \
+                      len(self.varType), ('The discrete variables must be '
+                    'specified after the continuous, binary, and integer '
+                    'variables. The order given was {}'.format(self.varType))
+        assert len(self.lb) == len(self.ub), ('The lower and upper bounds must '
+                    'have the same dimensions. lb = {}, ub = {}'.format(
+                    len(self.lb), len(self.ub)))
+        assert set(self.varType).issubset(['c', 'i', 'd', 'x', 'f']), ('The '
+                    'variable specifications do not match the allowed values '
+                    'of "c", "i", or "d". The varTypes specified is '
+                    '{}'.format(self.varType))
+        assert np.all(self.ub > self.lb), ('All upper-bound values must be '
+                    'greater than lower-bound values')
+
+        #  Append discretes to lb and ubs and convert to numpy arrays
+        for d in range(len(self.discreteVals)):
+            self.lb.append(0)
+            self.ub.append(len(self.discreteVals[d])-1)
+            self.discreteVals[d] = np.array(self.discreteVals[d])
+        self.lb = np.array(self.lb)
+        self.ub = np.array(self.ub)
+    
+    def set_preset_params(self, funct, algorithm='', dimension=2):
         """!
         Instantiates a ProblemParameters object and populations member
         variables from a set of predefined problem types.
@@ -300,9 +406,6 @@ class ProblemParameters(object):
             Name of optimization program used. \n
         @param dimension: \e integer \n
             Used to set the dimension for scalable problems. \n
-
-        @return <em> ProblemParameters object: </em> A ProblemParameters
-            object with populated member variables.
         """
 
         # Build temp varType array for continuous problems with variable
@@ -313,7 +416,7 @@ class ProblemParameters(object):
 
         for case in Switch(funct):
             if case('mi_spring'):
-                params = ProblemParameters([0.01, 1], [3.0, 10],
+                ProblemParameters.__init__(self, [0.01, 1], [3.0, 10],
                                  ['c', 'i', 'd'],
                                  [[0.009, 0.0095, 0.0104, 0.0118,
                                    0.0128, 0.0132, 0.014, 0.015, 0.0162,
@@ -331,8 +434,9 @@ class ProblemParameters(object):
                                   '\\textbf{\# Coils}', '\\textbf{Wire Diam}'])
                 break
             if case('spring'):
-                params = ProblemParameters([0.05, 0.25, 2.0], [2.0, 1.3, 15.0],
-                                  ['c', 'c', 'c'], [], 0.012665,
+                ProblemParameters.__init__(self, [0.05, 0.25, 2.0],
+                                  [2.0, 1.3, 15.0], ['c', 'c', 'c'], [],
+                                  0.012665,
                                   ('\\textbf{Spring Optimization using %s}'
                                    %algorithm),
                                   ('\\textbf{Function Evaluations for Spring '
@@ -341,7 +445,7 @@ class ProblemParameters(object):
                                   '\\textbf{Diameter}', '\\textbf{Length}'])
                 break
             if case('pressure_vessel'):
-                params = ProblemParameters([0.0625, 0.0625, 10.0, 1E-8],
+                ProblemParameters.__init__(self, [0.0625, 0.0625, 10.0, 1E-8],
                                   [1.25, 99*0.0625, 50.0, 200.0],
                                   ['c', 'c', 'c', 'c'], [], 6059.714335,
                                   ('\\textbf{Pressure Vessel Optimization '
@@ -354,7 +458,7 @@ class ProblemParameters(object):
                                    '\\textbf{Inner Radius}',
                                    '\\textbf{Cylinder Length}'])
             if case('mi_pressure_vessel'):
-                params = ProblemParameters([25.0, 25.0], [210.0, 240.0],
+                ProblemParameters.__init__(self, [25.0, 25.0], [210.0, 240.0],
                                   ['c', 'c', 'd', 'd'],
                                   [[0.0625, 0.125, 0.182, 0.25,
                                     0.3125, 0.375, 0.4375, 0.5, 0.5625, 0.625,
@@ -379,7 +483,7 @@ class ProblemParameters(object):
                                    '\\textbf{Head Thickness}'])
                 break
             if case('welded_beam'):
-                params = ProblemParameters([0.1, 0.1, 1E-8, 1E-8],
+                ProblemParameters.__init__(self, [0.1, 0.1, 1E-8, 1E-8],
                                   [10.0, 10.0, 10.0, 2.0], ['c', 'c', 'c', 'c'],
                                   [], 1.724852,
                                   ('\\textbf{Welded Beam Optimization using '
@@ -391,7 +495,8 @@ class ProblemParameters(object):
                                    '\\textbf{Beam W}'])
                 break
             if case('speed_reducer'):
-                params = ProblemParameters([2.6, 0.7, 17.0, 7.3, 7.8, 2.9, 5.0],
+                ProblemParameters.__init__(self,
+                                  [2.6, 0.7, 17.0, 7.3, 7.8, 2.9, 5.0],
                                   [3.6, 0.8, 28.0, 8.3, 8.3, 3.9, 5.5],
                                   ['c', 'c', 'c', 'c', 'c', 'c', 'c'], [],
                                   2996.348165,
@@ -407,7 +512,8 @@ class ProblemParameters(object):
                                    '\\textbf{2nd Shaft D}'])
                 break
             if case('mi_chemical_proccess'):
-                params  = ProblemParameters([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                ProblemParameters.__init__(self,
+                                  [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                                   [10.0, 10.0, 10.0, 1, 1, 1, 1],
                                   ['c', 'c', 'c', 'i', 'i', 'i', 'i'], [],
                                   4.579582,
@@ -421,7 +527,7 @@ class ProblemParameters(object):
                                    '\\textbf{y4}'])
                 break
             if case('dejong'):
-                params = ProblemParameters(np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
                                   np.ones(dimension)*5.12, v, [], 0.0000,
                                   ('\\textbf{De Jong Function Optimization '
                                    'using %s}' %algorithm),
@@ -432,7 +538,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('shifted_dejong'):
-                params = ProblemParameters(np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
                                   np.ones(dimension)*-5.12, v, [], 0.0000,
                                   ('\\textbf{Shifted De Jong Function '
                                    'Optimization using %s}' %algorithm),
@@ -443,7 +549,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('ackley'):
-                params = ProblemParameters(np.ones(dimension)*-25.,
+                ProblemParameters.__init__(self, np.ones(dimension)*-25.,
                                   np.ones(dimension)*25., v, [], 0.0000,
                                   ('\\textbf{Ackley Function Optimization '
                                    'using %s}' %algorithm),
@@ -454,7 +560,7 @@ class ProblemParameters(object):
                                     %i for i in range(dimension)])
                 break
             if case('shifted_ackley'):
-                params = ProblemParameters(np.ones(dimension)*-25.,
+                ProblemParameters.__init__(self, np.ones(dimension)*-25.,
                                   np.ones(dimension)*25., v, [], 0.0000,
                                   ('\\textbf{Shifted Ackley Function '
                                    'Optimization using %s}' %algorithm),
@@ -465,7 +571,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('easom'):
-                params = ProblemParameters(np.array([-100., -100.]),
+                ProblemParameters.__init__(self, np.array([-100., -100.]),
                                   np.array([100., 100.]), v, [], -1.0000,
                                   ('\\textbf{Easom Function Optimization using '
                                    '%s}' %algorithm),
@@ -476,7 +582,7 @@ class ProblemParameters(object):
                                    + ['\\textbf{x}', '\\textbf{y}'])
                 break
             if case('shifted_easom'):
-                params = ProblemParameters(np.array([-100., -100.]),
+                ProblemParameters.__init__(self, np.array([-100., -100.]),
                                   np.array([100., 100.]), v, [], -1.0000,
                                   ('\\textbf{Shifted Easom Function '
                                    'Optimization using %s}' %algorithm),
@@ -487,7 +593,7 @@ class ProblemParameters(object):
                                    + ['\\textbf{x}', '\\textbf{y}'])
                 break
             if case('griewank'):
-                params = ProblemParameters(np.ones(dimension)*-600.,
+                ProblemParameters.__init__(self, np.ones(dimension)*-600.,
                                   np.ones(dimension)*600., v, [], 0.0000,
                                   ('\\textbf{Griewank Function Optimization '
                                    'using %s}' %algorithm),
@@ -498,7 +604,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('shifted griewank'):
-                params = ProblemParameters(np.ones(dimension)*-600.,
+                ProblemParameters.__init__(self, np.ones(dimension)*-600.,
                                   np.ones(dimension)*600., v, [], 0.0000,
                                   ('\\textbf{Shifted Easom Function '
                                    'Optimization using %s}' %algorithm),
@@ -509,7 +615,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)]))
                 break
             if case('rastrigin'):
-                params = ProblemParameters(np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
                                   np.ones(dimension)*5.12, v, [], 0.0000,
                                   ('\\textbf{Rastrigin Function Optimization '
                                   'using %s}' %algorithm), \
@@ -520,7 +626,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('shifted_rastrigin'):
-                params = ProblemParameters(np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
                                   np.ones(dimension)*5.12, v, [], 0.0000,
                                   ('\\textbf{Shifted Rastrigin Function '
                                    'Optimization using %s}' %algorithm),
@@ -531,7 +637,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('rosenbrock'):
-                params = ProblemParameters(np.ones(dimension)*-5.,
+                ProblemParameters.__init__(self, np.ones(dimension)*-5.,
                                   np.ones(dimension)*5., v, [], 0.0000,
                                   ('\\textbf{Rosenbrock Function Optimization '
                                    'using %s}' %algorithm),
@@ -542,7 +648,7 @@ class ProblemParameters(object):
                                     %i for i in range(dimension)])
                 break
             if case('shifted_rosenbrock'):
-                params = ProblemParameters(np.ones(dimension)*-5.,
+                ProblemParameters.__init__(self, np.ones(dimension)*-5.,
                                   np.ones(dimension)*5., v, [], 0.0000,
                                   ('\\textbf{Shifted Rosenbrock Function '
                                    'Optimization using %s}' %algorithm),
@@ -553,7 +659,7 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('tsp'):
-                params = ProblemParameters([], [], [], [], 0.0,
+                ProblemParameters.__init__(self, [], [], [], [], 0.0,
                                   ('\\textbf{TSP Optimization using %s}'
                                    %algorithm),
                                   ('\\textbf{Function Evaluations for TSP '
@@ -563,7 +669,6 @@ class ProblemParameters(object):
             if case():
                 print ('ERROR: Fishing in the deep end you are. Define your own'
                        'parameter set you must.')
-        return params
 
 #------------------------------------------------------------------------------#        
 class Switch(object):
@@ -618,144 +723,6 @@ class Switch(object):
             return True
         else:
             return False
-
-#---------------------------------------------------------------------------------------#
-def Get_Best(func,parents,children,lb,ub,varType,timeline,S,genUpdate,indices=[],mhFrac=0.0,random_replace=False,discreteID=[],discreteMap=[[]]):
-    """
-    Calculate fitness and find the current best design
-   
-    Parameters
-    ==========
-    func : function
-        The objective function to be minimized
-    parents : list of parent objects
-        The current parents representing system designs
-    children : list of arrays
-        The children design variables representing new system designs
-    lb : array
-        The lower bounds of the design variable(s)
-    ub : array
-        The upper bounds of the design variable(s)
-    varType : array
-        The type of variable for each design parameter.
-    timeline : list of history objects
-        The histories of the optimization process containing best design, fitness, generation, and 
-        function evaluations
-    S : Object    
-        An object representing the settings for the optimization algorithm
-    genUpdate : int
-        Indicator for how many generations to incrment the counter by.  Genenerally 0 or 1.
-   
-    Optional
-    ========
-    mhFrac : float
-        The Metropolis-Hastings fraction.  A fraction of the otherwise discarded solutions will be evaluated 
-        for acceptance. 
-    random_replace : boolean
-        If True, a random parent will be selected for comparison to the ith child.
-        (Default: True)   
-    discreteID : array
-        A truth array indicating the location of the discrete variables. Used to save the actual value 
-        instead of index if discret variables are present.
-        Default=[]
-    discreteMap : list of list(s)
-        nxm with n=# of discrete variables and m=# of values that can be taken for each variable 
-        Default=[[]]
-   
-    Returns
-    =======
-    parents : list of parent objects
-        The current parents representing system designs
-    replace : integer
-        The number of replacements made
-    timeline : list of history objects
-        The updated history of the optimization process containing best design, fitness, 
-        generation, and function evaluations
-    """
-    
-    #Test input values for consistency
-    assert hasattr(func, '__call__'), 'Invalid function handle'
-    if discreteID!=[]:
-        assert np.sum(discreteID)==len(discreteMap), 'A map must exist for each discrete variable. {} discrete variables, \
-        but {} maps provided.'.format(np.sum(discreteID),len(discreteMap))
-    
-    # Track # of replacements to track effectiveness of search methods
-    replace=0
-    
-    # Find worst fitness to use as the penalty
-    for i in range(0,len(children),1):
-        (fnew,gnew)=func(children[i],penalty=0)
-        if fnew > S.penalty:
-            S.penalty=fnew
-    # Calculate fitness; replace parents if child has better fitness
-    feval=0
-    for i in range(0,len(children),1):
-        if random_replace:
-            j=int(np.random.rand()*len(parents))
-        elif len(indices)==len(children):
-            j=indices[i]
-        else: 
-            j=i
-        (fnew,gnew)=func(children[i],penalty=S.penalty)
-        feval += 1
-        if fnew < parents[j].fitness:
-            parents[j].fitness=fnew
-            parents[j].variables=cp.copy(children[i])
-            parents[i].changeCount+=1
-            parents[i].stallCount=0
-            replace+=1
-            if parents[i].changeCount>=25 and j>=S.population*S.fracElite:
-                #print "Max Changes: ", parents[i].f
-                parents[i].variables=S.initialize(1, 'random', lb, ub, varType).flatten()
-                (fnew,gnew)=func(parents[i].variables,penalty=S.penalty)
-                parents[i].fitness=fnew
-                parents[i].changeCount=0
-        else:
-            parents[j].stallCount+=1
-            if parents[j].stallCount>50000 and j!=0:
-                parents[i].variables=S.initialize(1, 'random', lb, ub, varType).flatten()
-                (fnew,gnew)=func(parents[i].variables,penalty=S.penalty)
-                parents[i].fitness=fnew
-                parents[i].changeCount=0
-                parents[i].stallCount=0
-                       
-            # Metropis-Hastings algorithm
-            r=int(np.random.rand()*len(parents))
-            if r<=mhFrac:
-                r=int(np.random.rand()*len(parents))
-                if fnew < parents[r].fitness:  
-                    parents[r].fitness=fnew
-                    parents[r].variables=cp.copy(children[i])
-                    parents[r].changeCount+=1
-                    parents[r].stallCount+=1
-                    replace+=1
-
-    #Sort the pop
-    parents.sort(key=lambda x: x.fitness)
-    
-    # Map the discrete variables for storage
-    if discreteID!=[]:
-        dVec=[]
-        i=0
-        for j in range(len(discreteID)):
-            if discreteID[j]==1:
-                dVec.append(discreteMap[i][int(parents[0].variables[j])])
-                i+=1
-            else:
-                dVec.append(parents[0].variables[j])
-    else:
-        dVec=cp.copy(parents[0].variables)
-        
-    #Store history on timeline if new optimal design found
-    if len(timeline)<2:
-        timeline.append(Event(len(timeline)+1,feval,parents[0].fitness,dVec))
-    elif parents[0].fitness<timeline[-1].fitness and abs((timeline[-1].fitness-parents[0].fitness)/parents[0].fitness) > S.convTol:
-        timeline.append(Event(timeline[-1].generation+1,timeline[-1].evaluations+feval,parents[0].fitness,dVec))
-    else:
-        timeline[-1].generation+=genUpdate
-        timeline[-1].evaluations+=feval
-        
-    return(parents,replace,timeline)
 
 #---------------------------------------------------------------------------------------#
 class WeightedRandomGenerator(object):
