@@ -21,8 +21,6 @@ included in the src directory.
 
 import time
 
-import numpy as np
-
 from numpy.random import rand
 
 from GnoweeUtilities import Parent
@@ -91,7 +89,8 @@ def main(gh):
             for i in range(0, len(cind)):
                 if cind[i] in dind:
                     t = dind.index(cind[i])
-                    children.append(dChildren[t]*(gh.iID+gh.dID)+cChildren[i]*gh.cID)
+                    children.append(dChildren[t]*(gh.iID+gh.dID) \
+                                    +cChildren[i]*gh.cID)
                     ind.append(cind[i])
                     del dChildren[t]
                     del dind[t]
@@ -123,23 +122,20 @@ def main(gh):
                                                      randomParents=True)
 
         # Crossover
-        if True:
-        #if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
+        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID)+sum(gh.xID) >= 1:
             (children, ind) = gh.crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                      timeline=timeline)
 
         # Scatter Search
-        if True:
-        #if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
+        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             (children, ind) = gh.scatter_search([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                      timeline=timeline,
                                                      adoptedParents=ind)
 
         # Elite Crossover
-        if sum(gh.iID)+sum(gh.dID)>=1 and sum(gh.cID)>=1:
-        #if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
+        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             children = gh.elite_crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                     timeline=timeline)

@@ -111,26 +111,26 @@ class GnoweeHeuristics(ProblemParameters):
         ProblemParameters.__init__(self, **kwargs)
 
         ## @var population
-        # \e integer
+        # \e integer:
         # The number of members in each generation.
         self.population = population
 
         ## @var initSampling
-        # \e string
+        # \e string:
         # The method used to sample the phase space and create the initial
         # population. Valid options are 'random', 'nolh', 'nolh-rp',
         #'nolh-cdr', and 'lhc' as specified in init_samples().
         self.initSampling = initSampling
 
         ## @var fracDiscovered
-        # \e float
+        # \e float:
         # Discovery probability used for the mutate() heuristic.
         self.fracDiscovered = fracDiscovered
         assert self.fracDiscovered >= 0 and self.fracDiscovered <= 1, ('The '
                                  'probability of discovery must exist on (0,1]')
 
         ## @var fracElite
-        # \e float
+        # \e float:
         # Elite fraction probability used for the scatter_search(), crossover(),
         # and cont_crossover() heuristics.
         self.fracElite = fracElite
@@ -138,7 +138,7 @@ class GnoweeHeuristics(ProblemParameters):
                                                 'fraction must exist on (0,1]')
 
         ## @var fracLevy
-        # \e float
+        # \e float:
         # Levy flight probability used for the disc_levy_flight() and
         # cont_levy_flight() heuristics.
         self.fracLevy = fracLevy
@@ -146,58 +146,58 @@ class GnoweeHeuristics(ProblemParameters):
                         'that a Levy flight is performed must exist on (0,1]')
 
         ## @var alpha
-        # \e float
+        # \e float:
         # Levy exponent - defines the index of the distribution and controls
         # scale properties of the stochastic process.
         self.alpha = alpha
 
         ## @var gamma
-        # \e float
+        # \e float:
         # Gamma - scale unit of process for Levy flights.
         self.gamma = gamma
 
         ## @var n
-        # \e integer
+        # \e integer:
         # Number of independent variables - can be used to reduce Levy flight
         # sampling variance.
         self.n = n
 
         ## @var scalingFactor
-        # \e float
+        # \e float:
         # Step size scaling factor used to adjust Levy flights to length scale
         # of system. The implementation of the Levy flight sampling makes this
         # largely arbitrary.
         self.scalingFactor = scalingFactor
 
         ## @var penalty
-        # \e float
+        # \e float:
         # Individual constraint violation penalty to add to objective function.
         self.penalty = penalty
 
         ## @var maxGens
-        # \e integer
+        # \e integer:
         # The maximum number of generations to search.
         self.maxGens = maxGens
 
         ## @var maxFevals
-        # \e integer
+        # \e integer:
         # The maximum number of objective function evaluations.
         self.maxFevals = maxFevals
 
         ## @var convTol
-        # \e float
+        # \e float:
         # The minimum change of the best objective value before the search
         # terminates.
         self.convTol = convTol
 
         ## @var stallLimit
-        # \e integer
+        # \e integer:
         # The maximum number of gen3rations to search without a descrease
         # exceeding convTol.
         self.stallLimit = stallLimit
 
         ## @var optConvTol
-        # \e float
+        # \e float:
         # The maximum deviation from the best know fitness value before the
         # search terminates.
         self.optConvTol = optConvTol
@@ -250,7 +250,7 @@ class GnoweeHeuristics(ProblemParameters):
         header += ["Convergence Tolerance = {}".format(self.convTol)]
         header += ["Stall Limit = {}".format(self.stallLimit)]
         header += ["Optimal Convergence Tolerance = {}".format(self.optConvTol)]
-        header += ["  Attributes Inhereted from ProblemParameters:"]
+        header += ["     Attributes Inhereted from ProblemParameters:"]
         header += ["{}".format(ProblemParameters.__str__(self))]
         return "\n".join(header)+"\n"
 
@@ -653,7 +653,7 @@ class GnoweeHeuristics(ProblemParameters):
             fnew = self.objective.func(children[i])
             #print "1:", fnew, children[i]
             for con in self.constraints:
-                 fnew += con.func(children[i], self.penalty)
+                fnew += con.func(children[i], self.penalty)
             #print "1:", fnew
             feval += 1
             if fnew < parents[j].fitness:

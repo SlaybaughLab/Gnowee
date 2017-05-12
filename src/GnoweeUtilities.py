@@ -8,12 +8,10 @@
 
 @author James Bevins
 
-@date 11May17
+@date 12May17
 """
 
 import numpy as np
-import copy as cp
-import bisect
 
 from Constraints import Constraint
 from ObjectiveFunction import ObjectiveFunction
@@ -252,11 +250,11 @@ class ProblemParameters(object):
         else:
             self.constraints = constraints
 
-        ## @var lb 
+        ## @var lb
         # \e array: The lower bounds of the design variable(s).
         self.lb = lowerBounds
 
-        ## @var ub:
+        ## @var ub
         # \e array: The upper bounds of the design variable(s).
         self.ub = upperBounds
 
@@ -283,7 +281,7 @@ class ProblemParameters(object):
         # \e string: The plot title for the histogram of the optimization
         # results.
         self.histTitle = histTitle
-        
+
         ## @var varNames
         # <em> list of strings: </em> The names of the variables for the
         # optimization problem.
@@ -350,15 +348,10 @@ class ProblemParameters(object):
         @param self: <em> pointer </em> \n
             The ProblemParameters pointer. \n
         """
-        return "ProblemParameters({}, {}, {}, {}, {}, {}, {}, {})".format(
-                                                       self.lb,
-                                                       self.ub,
-                                                       self.varType,
-                                                       self.discreteVals,
-                                                       self.optimum,
-                                                       self.pltTitle,
-                                                       self.histTitle,
-                                                       self.varNames)
+        return ("ProblemParameters({}, {}, {}, {}, {}, {}, {}, {}, {}, "
+                "{})".format(self.objective, self.constraints, self.lb, self.ub,
+                             self.varType, self.discreteVals, self.optimum,
+                             self.pltTitle, self.histTitle, self.varNames))
 
     def __str__(self):
         """!
@@ -368,7 +361,7 @@ class ProblemParameters(object):
             The ProblemParameters pointer. \n
         """
 
-        header = ["ProblemParameters:"]
+        header = ["  ProblemParameters:"]
         header += ["Lower Bounds: {}".format(self.lb)]
         header += ["Upper Bounds: {}".format(self.ub)]
         header += ["Variable Types: {}".format(self.varType)]
@@ -377,6 +370,9 @@ class ProblemParameters(object):
         header += ["Plot Title: {}".format(self.pltTitle)]
         header += ["Histogram Title: {}".format(self.histTitle)]
         header += ["Variable Names: {}".format(self.varNames)]
+        header += ["{}".format(self.objective)]
+        for con in self.constraints:
+            header += ["{}".format(con)]
         return "\n".join(header)+"\n"
 
     def sanitize_inputs(self):
@@ -428,7 +424,7 @@ class ProblemParameters(object):
             self.discreteVals[d] = np.array(self.discreteVals[d])
         self.lb = np.array(self.lb)
         self.ub = np.array(self.ub)
-    
+
     def set_preset_params(self, funct, algorithm='', dimension=2):
         """!
         Instantiates a ProblemParameters object and populations member
@@ -471,7 +467,8 @@ class ProblemParameters(object):
                                   '\\textbf{\# Coils}', '\\textbf{Wire Diam}'])
                 break
             if case('spring'):
-                ProblemParameters.__init__(self, [0.05, 0.25, 2.0],
+                ProblemParameters.__init__(self, ObjectiveFunction('spring'),
+                                  Constraint('spring', 0.0), [0.05, 0.25, 2.0],
                                   [2.0, 1.3, 15.0], ['c', 'c', 'c'], [],
                                   0.012665,
                                   ('\\textbf{Spring Optimization using %s}'
@@ -482,7 +479,10 @@ class ProblemParameters(object):
                                   '\\textbf{Diameter}', '\\textbf{Length}'])
                 break
             if case('pressure_vessel'):
-                ProblemParameters.__init__(self, [0.0625, 0.0625, 10.0, 1E-8],
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('pressure_vessel'),
+                                  Constraint('pressure_vessel', 0.0),
+                                  [0.0625, 0.0625, 10.0, 1E-8],
                                   [1.25, 99*0.0625, 50.0, 200.0],
                                   ['c', 'c', 'c', 'c'], [], 6059.714335,
                                   ('\\textbf{Pressure Vessel Optimization '
@@ -495,7 +495,10 @@ class ProblemParameters(object):
                                    '\\textbf{Inner Radius}',
                                    '\\textbf{Cylinder Length}'])
             if case('mi_pressure_vessel'):
-                ProblemParameters.__init__(self, [25.0, 25.0], [210.0, 240.0],
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('mi_pressure_vessel'),
+                                  Constraint('mi_pressure_vessel', 0.0),
+                                  [25.0, 25.0], [210.0, 240.0],
                                   ['c', 'c', 'd', 'd'],
                                   [[0.0625, 0.125, 0.182, 0.25,
                                     0.3125, 0.375, 0.4375, 0.5, 0.5625, 0.625,
@@ -520,9 +523,12 @@ class ProblemParameters(object):
                                    '\\textbf{Head Thickness}'])
                 break
             if case('welded_beam'):
-                ProblemParameters.__init__(self, [0.1, 0.1, 1E-8, 1E-8],
-                                  [10.0, 10.0, 10.0, 2.0], ['c', 'c', 'c', 'c'],
-                                  [], 1.724852,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('welded_beam'),
+                                  Constraint('welded_beam', 0.0),
+                                  [0.1, 0.1, 1E-8, 1E-8],
+                                  [10.0, 10.0, 10.0, 2.0],
+                                  ['c', 'c', 'c', 'c'], [], 1.724852,
                                   ('\\textbf{Welded Beam Optimization using '
                                    '%s}' %algorithm),
                                   ('\\textbf{Function Evaluations for Welded '
@@ -533,6 +539,8 @@ class ProblemParameters(object):
                 break
             if case('speed_reducer'):
                 ProblemParameters.__init__(self,
+                                  ObjectiveFunction('speed_reducer'),
+                                  Constraint('speed_reducer', 0.0),
                                   [2.6, 0.7, 17.0, 7.3, 7.8, 2.9, 5.0],
                                   [3.6, 0.8, 28.0, 8.3, 8.3, 3.9, 5.5],
                                   ['c', 'c', 'c', 'c', 'c', 'c', 'c'], [],
@@ -550,6 +558,8 @@ class ProblemParameters(object):
                 break
             if case('mi_chemical_proccess'):
                 ProblemParameters.__init__(self,
+                                  ObjectiveFunction('mi_chemical_proccess'),
+                                  Constraint('mi_chemical_proccess', 0.0),
                                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                                   [10.0, 10.0, 10.0, 1, 1, 1, 1],
                                   ['c', 'c', 'c', 'i', 'i', 'i', 'i'], [],
@@ -564,7 +574,8 @@ class ProblemParameters(object):
                                    '\\textbf{y4}'])
                 break
             if case('dejong'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self, ObjectiveFunction('dejong'),
+                                  [], np.ones(dimension)*-5.12,
                                   np.ones(dimension)*5.12, v, [], 0.0000,
                                   ('\\textbf{De Jong Function Optimization '
                                    'using %s}' %algorithm),
@@ -575,7 +586,9 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('shifted_dejong'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('shifted_dejong'),
+                                  [], np.ones(dimension)*-5.12,
                                   np.ones(dimension)*-5.12, v, [], 0.0000,
                                   ('\\textbf{Shifted De Jong Function '
                                    'Optimization using %s}' %algorithm),
@@ -586,18 +599,22 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('ackley'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-25.,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('ackley'),
+                                  [], np.ones(dimension)*-25.,
                                   np.ones(dimension)*25., v, [], 0.0000,
                                   ('\\textbf{Ackley Function Optimization '
                                    'using %s}' %algorithm),
                                   ('\\textbf{Function Evaluations for Ackley '
-                                   'Function Optimization using %s}' 
+                                   'Function Optimization using %s}'
                                    %algorithm),
                                   ['\\textbf{Fitness}']+['\\textbf{Dim \#%s}' \
                                     %i for i in range(dimension)])
                 break
             if case('shifted_ackley'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-25.,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('shifted_ackley'),
+                                  [], np.ones(dimension)*-25.,
                                   np.ones(dimension)*25., v, [], 0.0000,
                                   ('\\textbf{Shifted Ackley Function '
                                    'Optimization using %s}' %algorithm),
@@ -608,7 +625,8 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('easom'):
-                ProblemParameters.__init__(self, np.array([-100., -100.]),
+                ProblemParameters.__init__(self, ObjectiveFunction('easom'),
+                                  [], np.array([-100., -100.]),
                                   np.array([100., 100.]), v, [], -1.0000,
                                   ('\\textbf{Easom Function Optimization using '
                                    '%s}' %algorithm),
@@ -619,7 +637,9 @@ class ProblemParameters(object):
                                    + ['\\textbf{x}', '\\textbf{y}'])
                 break
             if case('shifted_easom'):
-                ProblemParameters.__init__(self, np.array([-100., -100.]),
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('shifted_easom'),
+                                  [], np.array([-100., -100.]),
                                   np.array([100., 100.]), v, [], -1.0000,
                                   ('\\textbf{Shifted Easom Function '
                                    'Optimization using %s}' %algorithm),
@@ -630,7 +650,9 @@ class ProblemParameters(object):
                                    + ['\\textbf{x}', '\\textbf{y}'])
                 break
             if case('griewank'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-600.,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('griewank'),
+                                  [], np.ones(dimension)*-600.,
                                   np.ones(dimension)*600., v, [], 0.0000,
                                   ('\\textbf{Griewank Function Optimization '
                                    'using %s}' %algorithm),
@@ -640,8 +662,10 @@ class ProblemParameters(object):
                                   ['\\textbf{Fitness}']+['\\textbf{Dim \#%s}' \
                                    %i for i in range(dimension)])
                 break
-            if case('shifted griewank'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-600.,
+            if case('shifted_griewank'):
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('shifted_griewank'),
+                                  [], np.ones(dimension)*-600.,
                                   np.ones(dimension)*600., v, [], 0.0000,
                                   ('\\textbf{Shifted Easom Function '
                                    'Optimization using %s}' %algorithm),
@@ -652,7 +676,8 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)]))
                 break
             if case('rastrigin'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self, ObjectiveFunction('rastrigin'),
+                                  [], np.ones(dimension)*-5.12,
                                   np.ones(dimension)*5.12, v, [], 0.0000,
                                   ('\\textbf{Rastrigin Function Optimization '
                                   'using %s}' %algorithm), \
@@ -663,7 +688,9 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('shifted_rastrigin'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-5.12,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('shifted_rastrigin'),
+                                  [], np.ones(dimension)*-5.12,
                                   np.ones(dimension)*5.12, v, [], 0.0000,
                                   ('\\textbf{Shifted Rastrigin Function '
                                    'Optimization using %s}' %algorithm),
@@ -674,7 +701,9 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('rosenbrock'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-5.,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('rosenbrock'),
+                                  [], np.ones(dimension)*-5.,
                                   np.ones(dimension)*5., v, [], 0.0000,
                                   ('\\textbf{Rosenbrock Function Optimization '
                                    'using %s}' %algorithm),
@@ -685,7 +714,9 @@ class ProblemParameters(object):
                                     %i for i in range(dimension)])
                 break
             if case('shifted_rosenbrock'):
-                ProblemParameters.__init__(self, np.ones(dimension)*-5.,
+                ProblemParameters.__init__(self,
+                                  ObjectiveFunction('shifted_rosenbrock'),
+                                  [], np.ones(dimension)*-5.,
                                   np.ones(dimension)*5., v, [], 0.0000,
                                   ('\\textbf{Shifted Rosenbrock Function '
                                    'Optimization using %s}' %algorithm),
@@ -696,7 +727,8 @@ class ProblemParameters(object):
                                    %i for i in range(dimension)])
                 break
             if case('tsp'):
-                ProblemParameters.__init__(self, [], [], [], [], 0.0,
+                ProblemParameters.__init__(self, ObjectiveFunction('tsp'),
+                                  [], [], [], [], [], 0.0,
                                   ('\\textbf{TSP Optimization using %s}'
                                    %algorithm),
                                   ('\\textbf{Function Evaluations for TSP '
@@ -707,7 +739,7 @@ class ProblemParameters(object):
                 print ('ERROR: Fishing in the deep end you are. Define your own'
                        'parameter set you must.')
 
-#------------------------------------------------------------------------------#        
+#------------------------------------------------------------------------------#
 class Switch(object):
     """!
     @ingroup GnoweeUtilities
@@ -723,7 +755,7 @@ class Switch(object):
         @param value: \e string \n
             Case selector value. \n
         """
-        
+
         ## @var value
         # \e string: Case selector value.
         self.value = value
@@ -760,37 +792,3 @@ class Switch(object):
             return True
         else:
             return False
-
-#---------------------------------------------------------------------------------------#
-class WeightedRandomGenerator(object):
-    """
-    Defines a class of weights to be used to select number of instances in array randomly with
-    linear weighting.  
-   
-    Parameters
-    ==========
-    self : object
-        Current instance of the class
-    weights : array
-        The array of weights (Higher = more likely to be selected)
-   
-    Returns
-    =======
-    bisect.bisect_right(self.totals, rnd) : integer
-        The randomly selected index of the weights array
-    """
-
-    def __init__(self, weights):
-        self.totals = []
-        running_total = 0
-
-        for w in weights:
-            running_total += w
-            self.totals.append(running_total)
-
-    def next(self):
-        rnd = np.random.rand() * self.totals[-1]
-        return bisect.bisect_right(self.totals, rnd)
-
-    def __call__(self):
-        return self.next()

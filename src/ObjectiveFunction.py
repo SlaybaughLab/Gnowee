@@ -15,14 +15,13 @@ format of the functions currently in the class.
 
 @author James Bevins
 
-@date 11May17
+@date 12May17
 """
 
-import math as m
 import numpy as np
 import operator
 
-from Constraints import Constraint
+from math import sqrt, exp, log, cos, pi
 
 #-----------------------------------------------------------------------------#
 class ObjectiveFunction(object):
@@ -35,7 +34,7 @@ class ObjectiveFunction(object):
     def __init__(self, method=None, objective=None):
         """!
         Constructor to build the ObjectiveFunction class.
-        
+
         This class specifies the objective function to be used for a
         optimization process.
 
@@ -51,7 +50,7 @@ class ObjectiveFunction(object):
         """
 
         ## @var _FUNC_DICT
-        # <em> dictionary of function handles </em> Stores
+        # <em> dictionary of function handles: </em> Stores
         # the mapping between the string names and function handles for
         # the objective function evaluations in the class.  This must be
         # updated by the user if a function is added to the class.
@@ -77,7 +76,7 @@ class ObjectiveFunction(object):
                            'tsp': self.tsp}
 
         ## @var func
-        # <em> function handle </em> The function handle for the
+        # <em> function handle: </em> The function handle for the
         # objective function to be used for the optimization.  The
         # function must be specified as a method of the class.
         if method != None and type(method) == str:
@@ -86,7 +85,7 @@ class ObjectiveFunction(object):
             self.func = method
 
         ## @var objective
-        # <em> integer, float, or numpy array </em> The desired outcome
+        # <em> integer, float, or numpy array: </em> The desired outcome
         # of the optimization.
         self.objective = objective
 
@@ -97,9 +96,8 @@ class ObjectiveFunction(object):
         @param self: \e pointer \n
             The ObjectiveFunction pointer. \n
         """
-        return "ObjectiveFunction({}, {}, {})".format(self._FUNC_DICT,
-                                                      self.func.__name__,
-                                                      self.objective)
+        return "ObjectiveFunction({}, {})".format(self.func.__name__,
+                                                  self.objective)
 
     def __str__(self):
         """!
@@ -109,10 +107,8 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         """
 
-        header = ["ObjectiveFunction:"]
-        header += ["Objective Function Dictionary: {}".format(
-                   self._FUNC_DICT)]
-        header += ["Objective Functions: {}".format(self.func.__name__)]
+        header = ["  ObjectiveFunction:"]
+        header += ["Function: {}".format(self.func.__name__)]
         header += ["Objective: {}".format(self.objective)]
         return "\n".join(header)+"\n"
 
@@ -139,10 +135,9 @@ class ObjectiveFunction(object):
 # be followed to work with the standard Coeus call. If a function is added.
 # it must also be added to the _FUNC_DICT attribute of the class.
 #-----------------------------------------------------------------------------#
-    def spring(self, u, penalty=1E15):
+    def spring(self, u):
         """!
-        Spring objective function with penalty method of constraint
-        enforcement.
+        Spring objective function.
 
         Optimal Example: \n
         u = [0.05169046, 0.356750, 11.287126] \n
@@ -152,8 +147,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -164,26 +157,14 @@ class ObjectiveFunction(object):
         assert u[0] != 0 and u[1] != 0 and u[2] != 0, ('Design values {} '
                                                  'cannot be zero.'.format(u))
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
-        g = [1.-u[1]**3*u[2]/(71785.*u[0]**4)]
-        g.append((4*u[1]**2-u[0]*u[1])/(12566*(u[1]*u[0]**3-u[0]**4)) \
-                 +1/(5108*u[0]**2)-1)
-        g.append(1-140.45*u[0]/(u[1]**2*u[2]))
-        g.append((u[0]+u[1])/1.5-1)
-
         # Evaluate fitness
         fitness = ((2+u[2])*u[0]**2*u[1])
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
+
+        return fitness
 
     def mi_spring(self, u):
         """!
-        Spring objective function with penalty method of constraint
-        enforcement.
+        Spring objective function.
 
         Optimal Example: \n
         u = [1.22304104, 9, 36] = [1.22304104, 9, 0.307]\n
@@ -234,10 +215,9 @@ class ObjectiveFunction(object):
 
         return fitness
 
-    def welded_beam(self, u, penalty=1E15):
+    def welded_beam(self, u):
         """!
-        Welded Beam objective function with penalty method of constraint
-        enforcement.
+        Welded Beam objective function.
 
         Optimal Example: \n
         u = [0.20572965, 3.47048857, 9.0366249, 0.20572965] \n
@@ -250,8 +230,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -262,39 +240,26 @@ class ObjectiveFunction(object):
         assert u[0] != 0 and u[1] != 0 and u[2] != 0 and u[3] != 0, ('Design'
                              'values {} cannot be zero'.format(u))
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
+        # Problem variable definitions
         em = 6000.*(14+u[1]/2.)
-        r = m.sqrt(u[1]**2/4.+((u[0]+u[2])/2.)**2)
-        j = 2.*(u[0]*u[1]*m.sqrt(2)*(u[1]**2/12.+((u[0]+u[2])/2.)**2))
-        tau_p = 6000./(m.sqrt(2)*u[0]*u[1])
+        r = sqrt(u[1]**2/4.+((u[0]+u[2])/2.)**2)
+        j = 2.*(u[0]*u[1]*sqrt(2)*(u[1]**2/12.+((u[0]+u[2])/2.)**2))
+        tau_p = 6000./(sqrt(2)*u[0]*u[1])
         tau_dp = em*r/j
-        tau = m.sqrt(tau_p**2+2.*tau_p*tau_dp*u[1]/(2.*r)+tau_dp**2)
+        tau = sqrt(tau_p**2+2.*tau_p*tau_dp*u[1]/(2.*r)+tau_dp**2)
         sigma = 504000./(u[3]*u[2]**2)
         delta = 65856000./((30*10**6)*u[3]*u[2]**2)
-        pc = 4.013*(30.*10**6)*m.sqrt(u[2]**2*u[3]**6/36.)/196.*(1.-u[2] \
-             *m.sqrt((30.*10**6)/(4.*(12.*10**6)))/28.)
-
-        g = [tau-13600.]
-        g.append(sigma-30000.)
-        g.append(u[0]-u[3])
-        g.append(0.10471*u[0]**2+0.04811*u[2]*u[3]*(14.+u[1])-5.0)
-        g.append(0.125-u[0])
-        g.append(delta-0.25)
-        g.append(6000-pc)
+        pc = 4.013*(30.*10**6)*sqrt(u[2]**2*u[3]**6/36.)/196.*(1.-u[2] \
+             *sqrt((30.*10**6)/(4.*(12.*10**6)))/28.)
 
         #Evaluate fitness
         fitness = 1.10471*u[0]**2*u[1]+0.04811*u[2]*u[3]*(14.0+u[1])
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
 
-    def pressure_vessel(self, u, penalty=1E15):
+        return fitness
+
+    def pressure_vessel(self, u):
         """!
-        Pressure vessel objective function with penalty method of constraint
-        enforcement.
+        Pressure vessel objective function.
 
         Near Optimal Example: \n
         u = [0.81250000001, 0.4375, 42.098445595854923, 176.6365958424394] \n
@@ -312,8 +277,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -324,26 +287,15 @@ class ObjectiveFunction(object):
         assert u[0] != 0 and u[1] != 0 and u[2] != 0 and u[3] != 0, ('Design'
                              'values {} cannot be zero'.format(u))
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
-        g = [-u[0]+0.0193*u[2]]
-        g.append(-u[1]+0.00954*u[2])
-        g.append(-np.pi*u[2]**2*u[3]-4./3.*np.pi*u[2]**3+1296000)
-        g.append(u[3]-240)
-
         #Evaluate fitness
         fitness = 0.6224*u[0]*u[2]*u[3]+1.7781*u[1]*u[2]**2+3.1661*u[0]**2 \
                   *u[3]+19.84*u[0]**2*u[2]
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
 
-    def mi_pressure_vessel(self, u, penalty=1E15):
+        return fitness
+
+    def mi_pressure_vessel(self, u):
         """!
-        Mixed Integer Pressure vessel objective function with penalty method
-        of constraint enforcement.
+        Mixed Integer Pressure vessel objective function.
 
         Near optimal example: \n
         u = [58.2298, 44.0291, 17, 9] \n
@@ -360,8 +312,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -380,25 +330,14 @@ class ObjectiveFunction(object):
         ts = thickness[int(u[2])]
         th = thickness[int(u[3])]
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
-        g = [-ts+0.01932*R]
-        g.append(-th+0.00954*R)
-        g.append(-np.pi*R**2*L-4.0/3.0*np.pi*R**3+750*1728)
-        g.append(-240+L)
-
         #Evaluate fitness
         fitness = 0.6224*R*ts*L+1.7781*R**2*th+3.1611*ts**2*L+19.8621*R*ts**2
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
 
-    def speed_reducer(self, u, penalty=1E15):
+        return fitness
+
+    def speed_reducer(self, u):
         """!
-        Speed reducer objective function with penalty method of constraint
-        enforcement.
+        Speed reducer objective function.
 
         Optimal example: \n
         u = [58.2298, 44.0291, 17, 9] \n
@@ -415,8 +354,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -428,33 +365,14 @@ class ObjectiveFunction(object):
                u[4] != 0 and u[5] != 0 and u[6] != 0, ('Design values cannot '
                                                       'be zero {}.'.format(u))
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
-        g = [27./(u[0]*u[1]**2*u[2])-1.]
-        g.append(397.5/(u[0]*u[1]**2*u[2]**2)-1.)
-        g.append(1.93*u[3]**3/(u[1]*u[2]*u[5]**4)-1.)
-        g.append(1.93*u[4]**3/(u[1]*u[2]*u[6]**4)-1.)
-        g.append(1.0/(110.*u[5]**3)*m.sqrt((745.0*u[3]/(u[1]*u[2]))**2\
-                                           +16.9*10**6)-1)
-        g.append(1.0/(85.*u[6]**3)*m.sqrt((745.0*u[4]/(u[1]*u[2]))**2\
-                                          +157.5*10**6)-1)
-        g.append(u[1]*u[2]/40.-1)
-        g.append(5.*u[1]/u[0]-1)
-        g.append(u[0]/(12.*u[1])-1)
-        g.append((1.5*u[5]+1.9)/u[3]-1)
-        g.append((1.1*u[6]+1.9)/u[4]-1)
-
         #Evaluate fitness
         fitness = 0.7854*u[0]*u[1]**2*(3.3333*u[2]**2+14.9334*u[2]-43.0934) \
                   - 1.508*u[0]*(u[5]**2+u[6]**2) + 7.4777*(u[5]**3+u[6]**3) \
                   + 0.7854*(u[3]*u[5]**2+u[4]*u[6]**2)
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
 
-    def mi_chemical_process(self, u, penalty=1E15):
+        return fitness
+
+    def mi_chemical_process(self, u):
         """!
         Chemical process design mixed integer problem.
 
@@ -470,8 +388,6 @@ class ObjectiveFunction(object):
         @param u: \e array \n
             The design parameters to be evaluated.
             [x1, x2, x3, y1, y2, y3, y4] \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -480,28 +396,13 @@ class ObjectiveFunction(object):
         assert len(u) == 7, ('Chemical process design needs to specify 7 '
                              'parameters.')
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
-        g = [u[0]+u[1]+u[2]+u[3]+u[4]+u[5]-5]
-        g.append(u[0]**2+u[1]**2+u[2]**2+u[5]**2-5.5)
-        g.append(u[0]+u[3]-1.2)
-        g.append(u[1]+u[4]-1.8)
-        g.append(u[2]+u[5]-2.5)
-        g.append(u[0]+u[6]-1.2)
-        g.append(u[1]**2+u[4]**2-1.64)
-        g.append(u[2]**2+u[5]**2-4.25)
-        g.append(u[2]**2+u[4]**2-4.64)
-
         #Evaluate fitness
-        fitness = (u[3]-1)**2 + (u[4]-2)**2 + (u[5]-1)**2 - m.log(u[6]+1) \
+        fitness = (u[3]-1)**2 + (u[4]-2)**2 + (u[5]-1)**2 - log(u[6]+1) \
                   + (u[0]-1)**2 + (u[1]-2)**2 + (u[2]-3)**2
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
 
-    def ackley(self, u, penalty=0.0):
+        return fitness
+
+    def ackley(self, u):
         """!
         Ackley Function: Mulitmodal, n dimensional
 
@@ -515,9 +416,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -527,14 +425,14 @@ class ObjectiveFunction(object):
                              'dimension greater than 1.')
 
         #Evaluate fitness
-        fitness = -20*m.exp(-1./5.*m.sqrt(1./len(u) \
+        fitness = -20*exp(-1./5.*sqrt(1./len(u) \
                                     *sum(u[i]**2 for i in range(len(u))))) \
-                - m.exp(1./len(u)*sum(m.cos( \
-                        2*m.pi*u[i]) for i in range(len(u)))) + 20 + m.exp(1)
+                - exp(1./len(u)*sum(cos( \
+                        2*pi*u[i]) for i in range(len(u)))) + 20 + exp(1)
 
-        return fitness, 0.0
+        return fitness
 
-    def shifted_ackley(self, u, penalty=0.0):
+    def shifted_ackley(self, u):
         """!
         Ackley Function: Mulitmodal, n dimensional
         Ackley Function that is shifted from the symmetric 0, 0, 0, ..., 0
@@ -550,9 +448,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -562,14 +457,14 @@ class ObjectiveFunction(object):
                              'dimension greater than 1.')
 
         #Evaluate fitness
-        fitness = -20*m.exp(-1./5.*m.sqrt(1./len(u) \
+        fitness = -20*exp(-1./5.*sqrt(1./len(u) \
                                   *sum((u[i]-i)**2 for i in range(len(u))))) \
-                - m.exp(1./len(u)*sum(m.cos(2*m.pi* \
-                             (u[i]-i)) for i in range(len(u)))) + 20 + m.exp(1)
+                - exp(1./len(u)*sum(cos(2*pi* \
+                             (u[i]-i)) for i in range(len(u)))) + 20 + exp(1)
 
-        return fitness, 0.0
+        return fitness
 
-    def dejong(self, u, penalty=0.0):
+    def dejong(self, u):
         """!
         De Jong Function: Unimodal, n-dimensional
 
@@ -583,9 +478,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -597,9 +489,9 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = sum(i**2 for i in u)
 
-        return fitness, 0.0
+        return fitness
 
-    def shifted_dejong(self, u, penalty=0.0):
+    def shifted_dejong(self, u):
         """!
         De Jong Function: Unimodal, n-dimensional
         De Jong Function that is shifted from the symmetric 0, 0, 0, ..., 0
@@ -618,9 +510,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -632,9 +521,9 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = sum((u[i]-i)**2 for i in range(len(u)))
 
-        return fitness, 0.0
+        return fitness
 
-    def easom(self, u, penalty=0.0):
+    def easom(self, u):
         """!
         Easom Function: Multimodal, n-dimensional
 
@@ -648,9 +537,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -659,11 +545,11 @@ class ObjectiveFunction(object):
         assert len(u) == 2, 'The Easom Function must have a dimension of 2.'
 
         #Evaluate fitness
-        fitness = -m.cos(u[0])*m.cos(u[1])*m.exp(-(u[0]-m.pi)**2 \
-                                                 -(u[1]-m.pi)**2)
-        return fitness, 0.0
+        fitness = -cos(u[0])*cos(u[1])*exp(-(u[0]-pi)**2 \
+                                                 -(u[1]-pi)**2)
+        return fitness
 
-    def shifted_easom(self, u, penalty=0.0):
+    def shifted_easom(self, u):
         """!
         Easom Function: Multimodal, n-dimensional
         Easom Function that is shifted from the symmetric pi, pi optimimum.
@@ -678,9 +564,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -689,11 +572,11 @@ class ObjectiveFunction(object):
         assert len(u) == 2, 'The Easom Function must have a dimension of 2.'
 
         #Evaluate fitness
-        fitness = -m.cos(u[0])*m.cos(u[1]-1)*m.exp(-(u[0]-m.pi)**2 \
-                                                 -(u[1]-1-m.pi)**2)
-        return fitness, 0.0
+        fitness = -cos(u[0])*cos(u[1]-1)*exp(-(u[0]-pi)**2 \
+                                                 -(u[1]-1-pi)**2)
+        return fitness
 
-    def griewank(self, u, penalty=0.0):
+    def griewank(self, u):
         """!
         Griewank Function: Multimodal, n-dimensional
 
@@ -707,9 +590,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -720,10 +600,10 @@ class ObjectiveFunction(object):
 
         #Evaluate fitness
         fitness = 1./4000.*sum((u[i])**2 for i in range(len(u))) \
-                  - prod(m.cos(u[i]/m.sqrt(i+1)) for i in range(len(u))) +1.
-        return fitness, 0.0
+                  - prod(cos(u[i]/sqrt(i+1)) for i in range(len(u))) +1.
+        return fitness
 
-    def shifted_griewank(self, u, penalty=0.0):
+    def shifted_griewank(self, u):
         """!
         Griewank Function: Multimodal, n-dimensional
         Griewank Function that is shifted from the symmetric 0, 0, 0, ..., 0
@@ -739,9 +619,6 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -752,16 +629,15 @@ class ObjectiveFunction(object):
 
         #Evaluate fitness
         fitness = 1./4000.*sum((u[i]-i)**2 for i in range(len(u))) \
-                  -prod(m.cos((u[i]-i)/m.sqrt(i+1)) for i in range(len(u))) +1.
-        return fitness, 0.0
+                  -prod(cos((u[i]-i)/sqrt(i+1)) for i in range(len(u))) +1.
+        return fitness
 
-    def rastrigin(self, u, penalty=0.0):
+    def rastrigin(self, u):
         """!
         Rastrigin Function: Multimodal, n-dimensional
 
         Optimal example: \n
         u = [0, 0, 0, ..., 0] \n
-        fitness = 0.0
 
         Taken from: "Nature-Inspired Optimization Algorithms"
 
@@ -770,8 +646,6 @@ class ObjectiveFunction(object):
         @param u: \e array \n
             The design parameters to be evaluated. \n
         @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -783,9 +657,9 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = 10.*len(u)+sum((u[i])**2 -10. \
                                *np.cos(2.*np.pi*u[i]) for i in range(len(u)))
-        return fitness, 0.0
+        return fitness
 
-    def shifted_rastrigin(self, u, penalty=0.0):
+    def shifted_rastrigin(self, u):
         """!
         Rastrigin Function: Multimodal, n-dimensional
         Rastrigin Function that is shifted from the symmetric 0, 0, 0, ..., 0
@@ -802,8 +676,6 @@ class ObjectiveFunction(object):
         @param u: \e array \n
             The design parameters to be evaluated. \n
         @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -815,9 +687,9 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = 10.*len(u)+sum((u[i]-i)**2 -10. \
                            *np.cos(2.*np.pi*(u[i]-i)) for i in range(len(u)))
-        return fitness, 0.0
+        return fitness
 
-    def rosenbrock(self, u, penalty=0.0):
+    def rosenbrock(self, u):
         """!
         Rosenbrock Function: uni-modal, n-dimensional.
 
@@ -832,8 +704,6 @@ class ObjectiveFunction(object):
         @param u: \e array \n
             The design parameters to be evaluated. \n
         @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -845,9 +715,9 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = sum((u[i]-1)**2 +100. \
                     *(u[i+1]-u[i]**2)**2 for i in range(len(u)-1))
-        return fitness, 0.0
+        return fitness
 
-    def shifted_rosenbrock(self, u, penalty=0.0):
+    def shifted_rosenbrock(self, u):
         """!
         Rosenbrock Function: uni-modal, n-dimensional
         Rosenbrock Function that is shifted from the symmetric 0,0,0...0
@@ -864,8 +734,6 @@ class ObjectiveFunction(object):
         @param u: \e array \n
             The design parameters to be evaluated. \n
         @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -877,9 +745,9 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = sum((u[i]-1-i)**2 +100.*((u[i+1]-(i+1)) \
                                     -(u[i]-i)**2)**2 for i in range(len(u)-1))
-        return fitness, 0.0
+        return fitness
 
-    def tsp(self, u, penalty=0.0):
+    def tsp(self, u):
         """!
         Generic objective funtion to evaluate the TSP optimization by
         calculating total distance traveled.
@@ -889,8 +757,6 @@ class ObjectiveFunction(object):
         @param u: \e array \n
             The city pairs to be evaluated. \n
         @param penalty: \e float \n
-            Per constraint violation penalty. Not used for this function;
-            included for method input consistency. \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -902,13 +768,13 @@ class ObjectiveFunction(object):
         #Evaluate fitness
         fitness = 0
         for i in range(1, len(u), 1):
-            fitness = fitness+round(m.sqrt((u[i][0]-u[i-1][0])**2 \
+            fitness = fitness+round(sqrt((u[i][0]-u[i-1][0])**2 \
                                            +(u[i][1]-u[i-1][1])**2))
 
         #Complete the tour
-        fitness = fitness+round(m.sqrt((u[0][0]-u[-1][0])**2 \
+        fitness = fitness+round(sqrt((u[0][0]-u[-1][0])**2 \
                                        +(u[0][1]-u[-1][1])**2))
-        return fitness, 0.0
+        return fitness
 
 #-----------------------------------------------------------------------------#
 def prod(iterable):
