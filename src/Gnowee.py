@@ -149,7 +149,8 @@ def main(func, gh):
         if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             children = gh.mutate([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    func, timeline=timeline)
+                                                    func, timeline=timeline,
+                                                    genUpdate=1)
 
         # Test generational and function evaluation convergence
         if timeline[-1].generation > gh.stallLimit:
