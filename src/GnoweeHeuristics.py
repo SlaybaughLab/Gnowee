@@ -266,22 +266,6 @@ class GnoweeHeuristics(ProblemParameters):
             The method used to sample the phase space and create the initial
             population. Valid options are 'random', 'nolh', 'nolh-rp',
             'nolh-cdr', and 'lhc' as specified in init_samples(). \n
-        @param lb: \e array \n
-            The lower bounds of the design variable(s). \n
-        @param ub: \e array \n
-            The upper bounds of the design variable(s). \n
-        @param varType: \e array \n
-            The type of variable for each design parameter. Allowed values:
-            'c' = continuous \n
-            'i' = integer/binary (difference denoted by ub/lb) \n
-            'd' = discrete where the allowed values are given by the option
-                  discreteVals nxm arrary with n=# of discrete variables
-                  and m=# of values that can be taken for each variable \n
-            'x' = combinatorial. All of the variables denoted by x are
-                  assumed to be "swappable" in combinatorial permutations.
-                  There must be at least two variables denoted as
-                  combinatorial. \n
-            'f' = fixed design variable \n
 
         @return <em> list of arrays: </em> The initialized set of samples.
         """

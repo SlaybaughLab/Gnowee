@@ -644,8 +644,6 @@ class ObjectiveFunction(object):
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
-            The design parameters to be evaluated. \n
-        @param penalty: \e float \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -674,8 +672,6 @@ class ObjectiveFunction(object):
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
-            The design parameters to be evaluated. \n
-        @param penalty: \e float \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -702,8 +698,6 @@ class ObjectiveFunction(object):
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
-            The design parameters to be evaluated. \n
-        @param penalty: \e float \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -732,8 +726,6 @@ class ObjectiveFunction(object):
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
-            The design parameters to be evaluated. \n
-        @param penalty: \e float \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the
@@ -755,8 +747,6 @@ class ObjectiveFunction(object):
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
-            The city pairs to be evaluated. \n
-        @param penalty: \e float \n
 
         @return \e array: The fitness associated with the specified input. \n
         @return \e array: The assessed value for each constraint for the

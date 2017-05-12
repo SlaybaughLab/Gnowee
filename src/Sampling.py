@@ -538,6 +538,9 @@ class WeightedRandomGenerator(object):
             The array of weights (Higher = more likely to be selected) \n
         """
 
+        ## @var totals 
+        # <em> list or numpy array: </em> The ordinal ranking
+        # or data that is used to generate tehe weights.
         self.totals = []
         running_total = 0
 
