@@ -8,12 +8,15 @@
 
 @author James Bevins
 
-@date 9May17
+@date 11May17
 """
 
 import numpy as np
 import copy as cp
 import bisect
+
+from Constraints import Constraint
+from ObjectiveFunction import ObjectiveFunction
 
 #------------------------------------------------------------------------------#
 class Parent(object):
@@ -163,14 +166,34 @@ class ProblemParameters(object):
     problem. The methods provide a way of predefining problems for repeated use.
     """
 
-    def __init__(self, lowerBounds=[], upperBounds=[], varType=[],
-                 discreteVals=[], optimum=0.0, pltTitle='', histTitle='',
-                 varNames=['']):
+    def __init__(self, objective=None, constraints=[], lowerBounds=[],
+                 upperBounds=[], varType=[], discreteVals=[], optimum=0.0,
+                 pltTitle='', histTitle='', varNames=['']):
         """!
-        Constructor for the ProblemParameters class. 
+        Constructor for the ProblemParameters class. The default constructor
+        is useless for an optimization, but allows a placeholder class to be
+        instantiated.
+
+        This class contains the problem definitions required for an
+        optimization problem. It allows for single objective, multi-constraint
+        mixed variable optimization and any subset thereof. At a minimum,
+        the objective, lowerBounds, upperBounds, and varType attributes must be
+        specified to run Gnowee.
+
+        The optimum is used for convergence criteria and can be input if
+        known. If not, the default (0.0) will suffice for most problems,
+        or the user can make an educated guess based on their knowledge of
+        the problem.
 
         @param self: <em> pointer </em> \n
             The ProblemParameters pointer. \n
+        @param objective: <em> ObjectiveFunction object </em> \n
+            The optimization objective function to be used.  Only a single
+            objective function can be specified. \n
+        @param constraints: <em> list of Constraint objects </em> \n
+            The constraints on the problem. Zero constraints can be specified
+            as an empty list ([]), or multiple constraints can be specified
+            as a list of Constraint objects. \n
         @param lowerBounds: \e array \n
             The lower bounds of the design variable(s). Only enter the bounds
             for continuous and integer/binary variables. The order must match
@@ -215,6 +238,19 @@ class ProblemParameters(object):
         @param varNames: <em> list of strings </em>
             The names of the variables for the optimization problem. \n
         """
+
+        ## @var objective
+        # <em> ObjectiveFunction Object: </em> The objective function object
+        # to be used for the optimization.
+        self.objective = objective
+
+        ## @var constraints
+        # <em> list of Constraint Objects: </em> The constraints on the
+        # optimization design space.
+        if type(constraints) != list:
+            self.constraints = [constraints]
+        else:
+            self.constraints = constraints
 
         ## @var lb 
         # \e array: The lower bounds of the design variable(s).
@@ -416,8 +452,9 @@ class ProblemParameters(object):
 
         for case in Switch(funct):
             if case('mi_spring'):
-                ProblemParameters.__init__(self, [0.01, 1], [3.0, 10],
-                                 ['c', 'i', 'd'],
+                ProblemParameters.__init__(self, ObjectiveFunction('mi_spring'),
+                                 Constraint('mi_spring', 0.0), [0.01, 1],
+                                 [3.0, 10], ['c', 'i', 'd'],
                                  [[0.009, 0.0095, 0.0104, 0.0118,
                                    0.0128, 0.0132, 0.014, 0.015, 0.0162,
                                    0.0173, 0.018, 0.020, 0.023, 0.025, 0.028,

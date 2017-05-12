@@ -16,7 +16,7 @@ included in the src directory.
 
 @author James Bevins
 
-@date 9May17
+@date 11May17
 """
 
 import time
@@ -28,13 +28,11 @@ from numpy.random import rand
 from GnoweeUtilities import Parent
 
 #------------------------------------------------------------------------------#
-def main(func, gh):
+def main(gh):
     """!
     @ingroup Gnowee
     Main controller program for the Gnowee optimization.
 
-    @param func: \e function \n
-        The objective function to be minimized. \n
     @param gh: <em> GnoweeHeuristic object </em> \n
         An object constaining the problem definition and the settings and
         methods required for the Gnowee optimization algorithm. \n
@@ -49,7 +47,8 @@ def main(func, gh):
     pop = []                     #List of parent objects
 
     # Check for objective function(s)
-    assert hasattr(func, '__call__'), 'Invalid function handle provided.'
+    assert hasattr(gh.objective.func, '__call__'), ('Invalid function '
+                                                    'handle provided.')
 
     # Initialize population with random initial solutions
     initNum = max(gh.population*2, len(gh.ub)*10)
@@ -61,7 +60,7 @@ def main(func, gh):
     # Calculate initial fitness values and trim population to gh.population
     (pop, changes, timeline) = gh.population_update(pop,
                                                  [p.variables for p in pop],
-                                                 func, timeline=timeline,
+                                                 timeline=timeline,
                                                  genUpdate=1)
     if len(pop) > gh.population:
         pop = pop[0:gh.population]
@@ -103,14 +102,14 @@ def main(func, gh):
                 children.append(dChildren[i])
                 ind.append(dind[i])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                      func, timeline=timeline,
+                                                      timeline=timeline,
                                                       adoptedParents=ind,
                                                       mhFrac=0.2)
 
         elif sum(gh.cID) >= 1 and sum(gh.iID)+sum(gh.dID) == 0:
             (children, ind) = gh.cont_levy_flight([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                      func, timeline=timeline,
+                                                      timeline=timeline,
                                                       adoptedParents=ind,
                                                       mhFrac=0.2,
                                                       randomParents=True)
@@ -118,7 +117,7 @@ def main(func, gh):
         elif sum(gh.cID) == 0 and sum(gh.iID)+sum(gh.dID) >= 1:
             (children, ind) = gh.disc_levy_flight([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                     func, timeline=timeline,
+                                                     timeline=timeline,
                                                      adoptedParents=ind,
                                                      mhFrac=0.2,
                                                      randomParents=True)
@@ -128,14 +127,14 @@ def main(func, gh):
         #if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             (children, ind) = gh.crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                     func, timeline=timeline)
+                                                     timeline=timeline)
 
         # Scatter Search
         if True:
         #if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             (children, ind) = gh.scatter_search([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                     func, timeline=timeline,
+                                                     timeline=timeline,
                                                      adoptedParents=ind)
 
         # Elite Crossover
@@ -143,13 +142,13 @@ def main(func, gh):
         #if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             children = gh.elite_crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    func, timeline=timeline)
+                                                    timeline=timeline)
 
         # Mutation
         if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             children = gh.mutate([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    func, timeline=timeline,
+                                                    timeline=timeline,
                                                     genUpdate=1)
 
         # Test generational and function evaluation convergence

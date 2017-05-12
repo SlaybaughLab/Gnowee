@@ -18,7 +18,7 @@ interest based on the fitness landscape and type of variables.
 
 @author James Bevins
 
-@date 8May17
+@date 11May17
 """
 
 import numpy as np
@@ -44,18 +44,18 @@ class GnoweeHeuristics(ProblemParameters):
                  maxFevals=200000, convTol=1e-6, stallLimit=225,
                  optConvTol=1e-2, **kwargs):
         """!
-        Constructor to build the GnoweeHeuristics class.
+        Constructor to build the GnoweeHeuristics class.  This class must be
+        fully instantiated to run the Gnowee program.  It consists of 2 main
+        parts: The main class attributes and the inhereted ProblemParams class
+        attributes.  The main class atrributes contain defaults that don't
+        require direct user input to work (but can be modified by user input
+        if desired), but the ProblemParameter class does require proper
+        instantiation by the user.
 
         The default settings are found to be optimized for a wide range of
         problems, but can be changed to optimize performance for a particular
         problem type or class.  For more details, refer to the benchmark code
         in the development branch of the repo or <insert link to paper>.
-
-        If the optimizal fitness is unknown, as it often is, this can be left
-        as zero or some reasonable guess based on the understanding of the
-        problem. If the opimtimal fitness is set below what is actually
-        obatinable, the only impact is the removal of this convergence
-        criteria, and the program will still run.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
             The GnoweeHeuristics pointer. \n
@@ -582,9 +582,9 @@ class GnoweeHeuristics(ProblemParameters):
 
         return children
 
-    def population_update(self, parents, children, objFunc, constraints=None,
-                          timeline=None, genUpdate=0, adoptedParents=[],
-                          mhFrac=0.0, randomParents=False):
+    def population_update(self, parents, children, timeline=None,
+                          genUpdate=0, adoptedParents=[], mhFrac=0.0,
+                          randomParents=False):
         """!
         Calculate fitness, apply constraints, if present, and update the
         population if the children are better than their parents. Several
@@ -595,11 +595,6 @@ class GnoweeHeuristics(ProblemParameters):
             The current parents representing system designs. \n
         @param children: <em> list of arrays </em> \n
             The children design variables representing new system designs. \n
-        @param objFunc: \e function \n
-            The objective function used to evaluate the children in comparison
-            to the parents.  This assumes a minimization process. \n
-        @param constraints: <em> list of Constraint objects </em> \n
-            Constraint objects used to bound the system design space. \n
         @param timeline: <em> list of history objects </em> \n
             The histories of the optimization process containing best design,
             fitness, generation, and function evaluations. \n
@@ -628,7 +623,8 @@ class GnoweeHeuristics(ProblemParameters):
         """
 
         #Test input values for consistency
-        assert hasattr(objFunc, '__call__'), 'Invalid function handle'
+        assert hasattr(self.objective.func, '__call__'), ('Invalid \tion '
+                                                        'handle.')
 
         if self.dID != []:
             assert np.sum(self.dID) == len(self.discreteVals), ('A map must '
@@ -641,7 +637,7 @@ class GnoweeHeuristics(ProblemParameters):
 
         # Find worst fitness to use as the penalty
         for i in range(0, len(children), 1):
-            (fnew, gnew) = objFunc(children[i], penalty=0)
+            fnew = self.objective.func(children[i])
             if fnew > self.penalty:
                 self.penalty = fnew
 
@@ -654,9 +650,14 @@ class GnoweeHeuristics(ProblemParameters):
                 j = adoptedParents[i]
             else:
                 j = i
-            (fnew, gnew) = objFunc(children[i], penalty=self.penalty)
+            fnew = self.objective.func(children[i])
+            #print "1:", fnew, children[i]
+            for con in self.constraints:
+                 fnew += con.func(children[i], self.penalty)
+            #print "1:", fnew
             feval += 1
             if fnew < parents[j].fitness:
+                #print "Updating {} with {}".format(j,i)
                 parents[j].fitness = fnew
                 parents[j].variables = cp.copy(children[i])
                 parents[i].changeCount += 1
@@ -666,8 +667,11 @@ class GnoweeHeuristics(ProblemParameters):
                       j >= self.population*self.fracElite:
                     parents[i].variables = self.initialize(1, 'random'
                                                           ).flatten()
-                    (fnew, gnew) = objFunc(parents[i].variables,
-                                           penalty=self.penalty)
+                    fnew = self.objective.func(parents[i].variables)
+                    #print "2:", fnew
+                    for con in self.constraints:
+                        fnew += con.func(parents[i].variables, self.penalty)
+                    #print "2:", fnew
                     parents[i].fitness = fnew
                     parents[i].changeCount = 0
             else:
@@ -675,8 +679,9 @@ class GnoweeHeuristics(ProblemParameters):
                 if parents[j].stallCount > 50000 and j != 0:
                     parents[i].variables = self.initialize(1, 'random'
                                                           ).flatten()
-                    (fnew, gnew) = objFunc(parents[i].variables,
-                                           penalty=self.penalty)
+                    fnew = self.objective.func(parents[i].variables)
+                    for con in self.constraints:
+                        fnew += con.func(parents[i].variables, self.penalty)
                     parents[i].fitness = fnew
                     parents[i].changeCount = 0
                     parents[i].stallCount = 0

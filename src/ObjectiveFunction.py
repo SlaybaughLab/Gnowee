@@ -15,7 +15,7 @@ format of the functions currently in the class.
 
 @author James Bevins
 
-@date 10May17
+@date 11May17
 """
 
 import math as m
@@ -23,7 +23,6 @@ import numpy as np
 import operator
 
 from Constraints import Constraint
-from GnoweeUtilities import ProblemParameters
 
 #-----------------------------------------------------------------------------#
 class ObjectiveFunction(object):
@@ -36,6 +35,9 @@ class ObjectiveFunction(object):
     def __init__(self, method=None, objective=None):
         """!
         Constructor to build the ObjectiveFunction class.
+        
+        This class specifies the objective function to be used for a
+        optimization process.
 
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
@@ -44,7 +46,8 @@ class ObjectiveFunction(object):
         @param objective: <em> integer, float, or numpy array </em> \n
             The desired objective associated with the optimization.  The
             chosen value and type must be compatible with the optiization
-            function chosen. \n
+            function chosen. This is used in objective functions that involve
+            a comparison against a desired outcome. \n
         """
 
         ## @var _FUNC_DICT
@@ -177,7 +180,7 @@ class ObjectiveFunction(object):
                                                                  constraint))
         return fitness, g
 
-    def mi_spring(self, u, penalty=1E15):
+    def mi_spring(self, u):
         """!
         Spring objective function with penalty method of constraint
         enforcement.
@@ -193,20 +196,19 @@ class ObjectiveFunction(object):
             The ObjectiveFunction pointer. \n
         @param u: \e array \n
             The design parameters to be evaluated. \n
-        @param penalty: \e float \n
-            Per constraint violation penalty. \n
 
-        @return \e array: The fitness associated with the specified input. \n
-        @return \e array: The assessed value for each constraint for the
-            specified input. \n
+        @return \e float: The fitness associated with the specified input. \n
         """
         assert len(u) == 3, ('Spring design needs to specify D, N, and d and '
                              'only those 3 parameters.')
 
         # Set variables
-        tmp = ProblemParameters()
-        tmp.set_preset_params('mi_spring', 'Gnowee')
-        diams = tmp.discreteVals[0]
+        diams = [0.009, 0.0095, 0.0104, 0.0118, 0.0128, 0.0132, 0.014, 0.015,
+                  0.0162, 0.0173, 0.018, 0.020, 0.023, 0.025, 0.028, 0.032,
+                  0.035, 0.041, 0.047, 0.054, 0.063, 0.072, 0.080, 0.092,
+                  0.105, 0.120, 0.135, 0.148, 0.162, 0.177, 0.192, 0.207,
+                  0.225, 0.244, 0.263, 0.283, 0.307, 0.331, 0.362, 0.394,
+                  0.4375, 0.500]
 
         D = u[0]
         N = u[1]
@@ -227,24 +229,10 @@ class ObjectiveFunction(object):
         Cf = (4*(D/d)-1)/(4*(D/d)-4)+0.615*d/D
         lf = Fmax/K+1.05*(N+2)*d
 
-        # Constraints
-        ineqConstraint = Constraint(method='less_or_equal', constraint=0.0,
-                                    penalty=penalty)
-        g = [8*Cf*Fmax*D/(np.pi*d**3)-S]
-        g.append(lf-lmax)
-        g.append(dmin-d)
-        g.append(D-Dmax)
-        g.append(3.0-D/d)
-        g.append(sigmap-sigmapm)
-        g.append(sigmap+(Fmax-Fp)/K + 1.05*(N+2)*d-lf)
-        g.append(sigmaw-(Fmax-Fp)/K)
-
         #Evaluate fitness
         fitness = np.pi**2*D*d**2*(N+2)/4
-        for constraint in g:
-            fitness += ineqConstraint.get_penalty(ineqConstraint.func(
-                                                                 constraint))
-        return fitness, g
+
+        return fitness
 
     def welded_beam(self, u, penalty=1E15):
         """!
@@ -383,9 +371,10 @@ class ObjectiveFunction(object):
                              'parameters.')
 
         # Set variables
-        tmp = ProblemParameters()
-        tmp.set_preset_params('mi_pressure_vessel', 'Gnowee')
-        thickness = tmp.discreteVals[0]
+        thickness = [0.0625, 0.125, 0.182, 0.25, 0.3125, 0.375, 0.4375, 0.5,
+                      0.5625, 0.625, 0.6875, 0.75, 0.7125, 0.875, 0.9375, 1,
+                      1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5,
+                      1.5625, 1.625, 1.6875, 1.75, 1.8125, 1.875, 1.9375, 2]
         R = u[0]
         L = u[1]
         ts = thickness[int(u[2])]
