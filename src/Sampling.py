@@ -13,12 +13,12 @@ Dependencies on pyDOE.
 
 @author James Bevins
 
-@date 8May17
+@date 12May17
 """
 
 import math
-import argparse
 import random
+import bisect
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -262,11 +262,11 @@ def NOLH(conf, remove=None):
     Constructs a Nearly Orthogonal Latin Hypercube (NOLH) of order *m* from
     a configuration vector *conf*. The configuration vector may contain either
     the numbers in $ [0 q-1] $ or $ [1 q] $ where $ q = 2^{m-1} $.
-    The columns to be *removed* are also in $ [0 d-1] $ or $ [1 d] $ 
-    where 
-    
+    The columns to be *removed* are also in $ [0 d-1] $ or $ [1 d] $
+    where
+
     $ d = m + \binom{m-1}{2} $
-    
+
     is the NOLH dimensionality.
 
     The whole library is incorporated here with minimal modification for
@@ -519,3 +519,51 @@ def get_cdr_permutations(dim):
     CONF.update(EA_CONF)
 
     return CONF[dim][0], CONF[dim][1]
+
+#------------------------------------------------------------------------------#
+class WeightedRandomGenerator(object):
+    """!
+    @ingroup Sampling
+    Defines a class of weights to be used to select based on linear weighting.
+    This can be on index or some form of ordinal ranking.
+    """
+
+    def __init__(self, weights):
+        """!
+        WeightedRandomGenerator class constructor.
+
+        @param self: <em> pointer </em> \n
+            The WeightedRandomGenerator pointer. \n
+        @param weights: \e array \n
+            The array of weights (Higher = more likely to be selected) \n
+        """
+
+        self.totals = []
+        running_total = 0
+
+        for w in weights:
+            running_total += w
+            self.totals.append(running_total)
+
+    def next(self):
+        """!
+        Gets the next weight.
+
+        @param self: <em> pointer </em> \n
+            The WeightedRandomGenerator pointer. \n
+
+        @return \e integer: The randomly selected index of the weights array. \n
+        """
+        rnd = rand() * self.totals[-1]
+        return bisect.bisect_right(self.totals, rnd)
+
+    def __call__(self):
+        """!
+        Gets the next weight.
+
+        @param self: <em> pointer </em> \n
+            The WeightedRandomGenerator pointer. \n
+
+        @return \e integer: The randomly selected index of the weights array. \n
+        """
+        return self.next()
