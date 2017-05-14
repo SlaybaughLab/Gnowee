@@ -8,10 +8,11 @@
 
 @author James Bevins
 
-@date 12May17
+@date 1May17
 """
 
 import numpy as np
+import copy as cp
 
 from Constraints import Constraint
 from ObjectiveFunction import ObjectiveFunction
@@ -183,7 +184,7 @@ class ProblemParameters(object):
         or the user can make an educated guess based on their knowledge of
         the problem.
 
-        @param self: <em> pointer </em> \n
+        @param self: <em> ProblemParameters pointer </em> \n
             The ProblemParameters pointer. \n
         @param objective: <em> ObjectiveFunction object </em> \n
             The optimization objective function to be used.  Only a single
@@ -348,10 +349,12 @@ class ProblemParameters(object):
         @param self: <em> pointer </em> \n
             The ProblemParameters pointer. \n
         """
-        return ("ProblemParameters({}, {}, {}, {}, {}, {}, {}, {}, {}, "
-                "{})".format(self.objective, self.constraints, self.lb, self.ub,
-                             self.varType, self.discreteVals, self.optimum,
-                             self.pltTitle, self.histTitle, self.varNames))
+        return ("ProblemParameters({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, "
+                "{}, {}, {})".format(self.objective, self.constraints, self.lb,
+                             self.ub, self.varType, self.discreteVals,
+                             self.optimum, self.pltTitle, self.histTitle,
+                             self.varNames, self.cID, self.iID, self.dID,
+                             self.xID))
 
     def __str__(self):
         """!
@@ -365,7 +368,16 @@ class ProblemParameters(object):
         header += ["Lower Bounds: {}".format(self.lb)]
         header += ["Upper Bounds: {}".format(self.ub)]
         header += ["Variable Types: {}".format(self.varType)]
-        header += ["Discrete Values: {}".format(self.discreteVals)]
+        header += ["Continuous ID Vector: {}".format(self.cID)]
+        header += ["Integer ID Vector: {}".format(self.iID)]
+        header += ["Discrete ID Vector: {}".format(self.dID)]
+        header += ["Combinatorial ID Vector: {}".format(self.xID)]
+        if self.discreteVals[0] == self.discreteVals[1]:
+            header += [("Discrete Values (only printing elem 1 of {}): {}"
+                       "".format(len(self.discreteVals[0]),
+                                 self.discreteVals[0]))]
+        else:
+            header += [("Discrete Values: {} ".format(self.discreteVals))]
         header += ["Global Optimum: {}".format(self.optimum)]
         header += ["Plot Title: {}".format(self.pltTitle)]
         header += ["Histogram Title: {}".format(self.histTitle)]
@@ -385,7 +397,9 @@ class ProblemParameters(object):
         """
 
         # Check input variables
-        assert self.varType.count('d') == len(self.discreteVals), ('The '
+        assert self.varType.count('d') + self.varType.count('dx') \
+                             + self.varType.count('xd') \
+                             == len(self.discreteVals), ('The '
                             'allowed discrete  values must be specified for '
                             'each discrete variable. {} in varType, but {} in '
                             'discreteVals.'.format(self.varType.count('d'),
@@ -410,20 +424,84 @@ class ProblemParameters(object):
         assert len(self.lb) == len(self.ub), ('The lower and upper bounds must '
                     'have the same dimensions. lb = {}, ub = {}'.format(
                     len(self.lb), len(self.ub)))
-        assert set(self.varType).issubset(['c', 'i', 'd', 'x', 'f']), ('The '
+        assert set(self.varType).issubset(['c', 'i', 'd', 'x', 'f', 'cx', 'dx',
+                                           'ix', 'xc', 'xd', 'xi']), ('The '
                     'variable specifications do not match the allowed values '
-                    'of "c", "i", or "d". The varTypes specified is '
-                    '{}'.format(self.varType))
-        assert np.all(self.ub > self.lb), ('All upper-bound values must be '
-                    'greater than lower-bound values')
+                    'of "c", "i", "d", "x", "f", "cx", "dx", "ix", "xc", '
+                    '"xd", or "xi". The varTypes specified is  {}'.format(
+                    self.varType))
+        if self.ub and self.lb != []:
+            assert np.all(self.ub > self.lb), ('All upper-bound values must '
+                    'be greater than lower-bound values')
+
+        # Ensure discreteVals is a list
+        if type(self.discreteVals) != list:
+            self.DiscreteVals = self.discreteVals.tolist()
 
         #  Append discretes to lb and ubs and convert to numpy arrays
         for d in range(len(self.discreteVals)):
             self.lb.append(0)
             self.ub.append(len(self.discreteVals[d])-1)
-            self.discreteVals[d] = np.array(self.discreteVals[d])
+
         self.lb = np.array(self.lb)
         self.ub = np.array(self.ub)
+
+    def map_to_discretes(self, variables):
+        """!
+        Maps the sampled discrete indices to the array of allowable discrete
+        values and returns the associated variable array.
+
+        @param self: \e pointer \n
+            The ProblemParameters pointer. \n
+            The Parent pointer. \n
+        @param variables: \e array \n
+            The set of variables representing a design solution. \n
+
+        @return \e array: An array containing the variables associated with
+            the design.
+        """
+
+        if sum(self.dID) != 0:
+            tmpVar = []
+            i = 0
+            for j in range(len(self.dID)):
+                if self.dID[j] == 1:
+                    tmpVar.append(self.discreteVals[i][int(variables[j])])
+                    i += 1
+                elif self.iID[j] == 1:
+                    tmpVar.append(int(variables[j]))
+                else:
+                    tmpVar.append(variables[j])
+        else:
+            tmpVar = cp.copy(variables)
+        return np.array(tmpVar)
+
+    def map_from_discretes(self, variables):
+        """!
+        Maps the discrete values to indices for sampling.
+
+        @param self: \e pointer \n
+            The ProblemParameters pointer. \n
+            The Parent pointer. \n
+        @param variables: \e array \n
+            The set of variables representing a design solution. \n
+
+        @return \e array: An array containing the variables associated with
+            the design.
+        """
+        variables = variables.tolist()
+        if sum(self.dID) != 0:
+            tmpVar = []
+            i = 0
+            for j in range(len(self.dID)):
+                if self.dID[j] == 1:
+                    tmpVar.append(self.discreteVals[i].index(variables[j]))
+                    i += 1
+                else:
+                    tmpVar.append(variables[j])
+        else:
+            tmpVar = cp.copy(variables)
+        return np.array(tmpVar)
 
     def set_preset_params(self, funct, algorithm='', dimension=2):
         """!
@@ -511,7 +589,7 @@ class ProblemParameters(object):
                                     0.9375, 1, 1.0625, 1.125, 1.1875, 1.25,
                                     1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.625,
                                     1.6875, 1.75, 1.8125, 1.875, 1.9375, 2]],
-                                  5855.893191,
+                                  5882.70862818,
                                   ('\\textbf{MI Pressure Vessel Optimization '
                                    'using %s}' %algorithm),
                                   ('\\textbf{Function Evaluations for Pressure'

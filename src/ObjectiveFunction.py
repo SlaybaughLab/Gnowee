@@ -27,7 +27,7 @@ from math import sqrt, exp, log, cos, pi
 class ObjectiveFunction(object):
     """!
     @ingroup ObjectiveFunction
-    The class creates a ObjectiveFunction object that can be used in
+    This class creates a ObjectiveFunction object that can be used in
     optimization algorithms.
     """
 
@@ -38,7 +38,7 @@ class ObjectiveFunction(object):
         This class specifies the objective function to be used for a
         optimization process.
 
-        @param self: <em> pointer </em> \n
+        @param self: <em> ObjectiveFunction pointer </em> \n
             The ObjectiveFunction pointer. \n
         @param method: \e string \n
             The name of the objective function to evaluate. \n
@@ -93,7 +93,7 @@ class ObjectiveFunction(object):
         """!
         ObjectiveFunction class param print function.
 
-        @param self: \e pointer \n
+        @param self: \e ObjectiveFunction pointer \n
             The ObjectiveFunction pointer. \n
         """
         return "ObjectiveFunction({}, {})".format(self.func.__name__,
@@ -103,7 +103,7 @@ class ObjectiveFunction(object):
         """!
         Human readable ObjectiveFunction print function.
 
-        @param self: \e pointer \n
+        @param self: \e ObjectiveFunction pointer \n
             The ObjectiveFunction pointer. \n
         """
 
@@ -184,16 +184,9 @@ class ObjectiveFunction(object):
                              'only those 3 parameters.')
 
         # Set variables
-        diams = [0.009, 0.0095, 0.0104, 0.0118, 0.0128, 0.0132, 0.014, 0.015,
-                  0.0162, 0.0173, 0.018, 0.020, 0.023, 0.025, 0.028, 0.032,
-                  0.035, 0.041, 0.047, 0.054, 0.063, 0.072, 0.080, 0.092,
-                  0.105, 0.120, 0.135, 0.148, 0.162, 0.177, 0.192, 0.207,
-                  0.225, 0.244, 0.263, 0.283, 0.307, 0.331, 0.362, 0.394,
-                  0.4375, 0.500]
-
         D = u[0]
         N = u[1]
-        d = diams[int(u[2])]
+        d = u[2]
 
         # Variable Definititions:
         Fmax = 1000
@@ -321,14 +314,10 @@ class ObjectiveFunction(object):
                              'parameters.')
 
         # Set variables
-        thickness = [0.0625, 0.125, 0.182, 0.25, 0.3125, 0.375, 0.4375, 0.5,
-                      0.5625, 0.625, 0.6875, 0.75, 0.7125, 0.875, 0.9375, 1,
-                      1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5,
-                      1.5625, 1.625, 1.6875, 1.75, 1.8125, 1.875, 1.9375, 2]
         R = u[0]
         L = u[1]
-        ts = thickness[int(u[2])]
-        th = thickness[int(u[3])]
+        ts = u[2]
+        th = u[3]
 
         #Evaluate fitness
         fitness = 0.6224*R*ts*L+1.7781*R**2*th+3.1611*ts**2*L+19.8621*R*ts**2
@@ -752,8 +741,6 @@ class ObjectiveFunction(object):
         @return \e array: The assessed value for each constraint for the
             specified input. \n
         """
-        assert len(u) == 7, ('Speed reducer design needs to specify 4 '
-                             'parameters.')
 
         #Evaluate fitness
         fitness = 0
