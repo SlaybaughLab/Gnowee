@@ -82,7 +82,7 @@ def plot_vars(data, lowBounds=[], upBounds=[], title=[], label=[]):
         # Format subplot
         ax.axes.get_xaxis().set_visible(False)
         ax.yaxis.set_major_formatter(majorFormatter)
-        if lowBounds != []:
+        if len(lowBounds) != 0:
             assert len(upBounds) == len(lowBounds), ('Boundaries have '
                       'different # of design variables in plot_vars function.')
             assert (len(data[0].design)) == len(lowBounds), ('Data has '
@@ -237,13 +237,13 @@ def plot_feval_hist(data=[], listData=[], label=[]):
     # Build Plot if only one set of data passed
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    if data != []:
+    if len(data) != 0:
         x = data[:, 0]
         y = data[:, 1]
         ax.plot(x, y, 'ko-')
         #yerr = data[:, 2]
         #ax.errorbar(x, y, yerr=yerr, fmt='ko-')
-    elif listData != []:
+    elif len(listData) != 0:
         for i in range(0, len(listData), 1):
             x = listData[i][:, 0]
             y = listData[i][:, 1]

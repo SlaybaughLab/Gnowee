@@ -18,7 +18,7 @@ interest based on the fitness landscape and type of variables.
 
 @author James Bevins
 
-@date 11May17
+@date 14May17
 """
 
 import numpy as np
@@ -49,7 +49,7 @@ class GnoweeHeuristics(ProblemParameters):
         parts: The main class attributes and the inhereted ProblemParams class
         attributes.  The main class atrributes contain defaults that don't
         require direct user input to work (but can be modified by user input
-        if desired), but the ProblemParameter class does require proper
+        if desired), but the ProblemParameters class does require proper
         instantiation by the user.
 
         The default settings are found to be optimized for a wide range of
@@ -273,7 +273,7 @@ class GnoweeHeuristics(ProblemParameters):
         initSamples = initial_samples(self.lb, self.ub, sampleMethod,
                                       numSamples)
         for var in range(len(self.varType)):
-            if self.varType[var] == 'i' or self.varType[var] == 'd':
+            if 'i' in self.varType[var] or 'd' in self.varType[var]:
                 initSamples[:, var] = np.rint(initSamples[:, var])
         return initSamples
 
@@ -616,6 +616,13 @@ class GnoweeHeuristics(ProblemParameters):
                        'variables, and {} maps provided.'.format(
                         np.sum(self.dID), len(self.discreteVals)))
 
+        # Map the discrete variables for fitness calculation and storage
+        if sum(self.dID) != 0:
+            for c in range(0, len(children)):
+                children[c] = self.map_to_discretes(children[c])
+            for p in parents:
+                p.variables = self.map_to_discretes(p.variables)
+
         # Track # of replacements to track effectiveness of search methods
         replace = 0
 
@@ -635,13 +642,10 @@ class GnoweeHeuristics(ProblemParameters):
             else:
                 j = i
             fnew = self.objective.func(children[i])
-            #print "1:", fnew, children[i]
             for con in self.constraints:
-                fnew += con.func(children[i], self.penalty)
-            #print "1:", fnew
+                fnew += con.func(children[i])
             feval += 1
             if fnew < parents[j].fitness:
-                #print "Updating {} with {}".format(j,i)
                 parents[j].fitness = fnew
                 parents[j].variables = cp.copy(children[i])
                 parents[i].changeCount += 1
@@ -651,11 +655,11 @@ class GnoweeHeuristics(ProblemParameters):
                       j >= self.population*self.fracElite:
                     parents[i].variables = self.initialize(1, 'random'
                                                           ).flatten()
+                    parents[i].variables = self.map_to_discretes(
+                                                  parents[i].variables)
                     fnew = self.objective.func(parents[i].variables)
-                    #print "2:", fnew
                     for con in self.constraints:
-                        fnew += con.func(parents[i].variables, self.penalty)
-                    #print "2:", fnew
+                        fnew += con.func(parents[i].variables)
                     parents[i].fitness = fnew
                     parents[i].changeCount = 0
             else:
@@ -663,9 +667,11 @@ class GnoweeHeuristics(ProblemParameters):
                 if parents[j].stallCount > 50000 and j != 0:
                     parents[i].variables = self.initialize(1, 'random'
                                                           ).flatten()
+                    parents[i].variables = self.map_to_discretes(
+                                                  parents[i].variables)
                     fnew = self.objective.func(parents[i].variables)
                     for con in self.constraints:
-                        fnew += con.func(parents[i].variables, self.penalty)
+                        fnew += con.func(parents[i].variables)
                     parents[i].fitness = fnew
                     parents[i].changeCount = 0
                     parents[i].stallCount = 0
@@ -684,36 +690,29 @@ class GnoweeHeuristics(ProblemParameters):
         #Sort the pop
         parents.sort(key=lambda x: x.fitness)
 
-        # Map the discrete variables for storage
-        if self.dID != []:
-            dVec = []
-            i = 0
-            for j in range(len(self.dID)):
-                if self.dID[j] == 1:
-                    dVec.append(self.discreteVals[i][int(
-                                parents[0].variables[j])])
-                    i += 1
-                else:
-                    dVec.append(parents[0].variables[j])
-        else:
-            dVec = cp.copy(parents[0].variables)
-
         # If timeline provided, store history on timeline if new optimal
         # design found
         if timeline != None:
             if len(timeline) < 2:
                 timeline.append(Event(len(timeline)+1, feval,
-                                      parents[0].fitness, dVec))
+                                      parents[0].fitness, parents[0].variables))
             elif parents[0].fitness < timeline[-1].fitness \
                   and abs((timeline[-1].fitness-parents[0].fitness) \
                           /parents[0].fitness) > self.convTol:
                 timeline.append(Event(timeline[-1].generation+1,
                                       timeline[-1].evaluations+feval,
-                                      parents[0].fitness, dVec))
+                                      parents[0].fitness, parents[0].variables))
             else:
                 timeline[-1].generation += genUpdate
                 timeline[-1].evaluations += feval
 
+        # Map the discrete variables for fitness calculation and storage
+        if sum(self.dID) != 0:
+            for p in parents:
+                p.variables = self.map_from_discretes(p.variables)
+
+        # Return updated population
+        if timeline != None:
             return (parents, replace, timeline)
         else:
             return (parents, replace)

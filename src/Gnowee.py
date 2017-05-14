@@ -16,7 +16,7 @@ included in the src directory.
 
 @author James Bevins
 
-@date 11May17
+@date 13May17
 """
 
 import time
@@ -122,7 +122,7 @@ def main(gh):
                                                      randomParents=True)
 
         # Crossover
-        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID)+sum(gh.xID) >= 1:
+        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             (children, ind) = gh.crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                      timeline=timeline)
