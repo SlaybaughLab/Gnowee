@@ -205,9 +205,7 @@ class ProblemParameters(object):
             The type of variable for each position in the upper and lower
             bounds array. Discrete variables are to be included last as they
             are specified separatly from the lb/ub throught the discreteVals
-            optional input. A variable can have two types (for example, 'dx'
-            could denote a layer that can take multiple materials and be placed
-            at multiple design locations). \n
+            optional input. \n
             Allowed values: \n
              'c' = continuous over a given range (range specified in lb &
                    ub). \n
@@ -216,8 +214,9 @@ class ProblemParameters(object):
                    discreteVals nxm arrary with n=# of discrete variables and
                    m=# of values that can be taken for each variable. \n
              'x' = combinatorial. All of the variables denoted by x are assumed
-                   to be "swappable" in combinatorial permutations.  There must
-                   be at least two variables denoted as combinatorial. \n
+                   to be "swappable" in combinatorial permutations and assumed
+                   to take discrete values specified in by discreteVals. There
+                   must be at least two variables denoted as combinatorial. \n
              'f' = fixed design variable. Will not be considered of any
                    permutation. \n
         @param discreteVals: <em> list of list(s) </em> \n
@@ -302,19 +301,19 @@ class ProblemParameters(object):
             self.cID = []
 
             ## @var iID:
-            # \e array: The continuous variable truth array. This contains
+            # \e array: The integer variable truth array. This contains
             # a one in the positions corresponding to continuous variables
             # and 0 otherwise.
             self.iID = []
 
             ## @var dID:
-            # \e array: The continuous variable truth array. This contains
+            # \e array: The discrete variable truth array. This contains
             # a one in the positions corresponding to continuous variables
             # and 0 otherwise.
             self.dID = []
 
             ## @var xID:
-            # \e array: The continuous variable truth array. This contains
+            # \e array: The combinatorial variable truth array. This contains
             # a one in the positions corresponding to continuous variables
             # and 0 otherwise.
             self.xID = []
@@ -397,25 +396,21 @@ class ProblemParameters(object):
         """
 
         # Check input variables
-        assert self.varType.count('d') + self.varType.count('dx') \
-                             + self.varType.count('xd') \
+        assert self.varType.count('d') + self.varType.count('x') \
                              == len(self.discreteVals), ('The '
                             'allowed discrete  values must be specified for '
                             'each discrete variable. {} in varType, but {} in '
-                            'discreteVals.'.format(self.varType.count('d'),
-                                                   len(self.discreteVals)))
-        assert self.varType.count('c') + self.varType.count('b') + \
-               self.varType.count('i') == len(self.ub), ('Each specified '
-                            'continuous, binary, and integer variable must '
-                            'have a corresponding upper and lower bounds. {} '
-                            'variables and {} bounds specified'.format(
-                             self.varType.count('c') + self.varType.count('b') \
+                            'discreteVals.'.format(self.varType.count('d')+\
+                            self.varType.count('x'), len(self.discreteVals)))
+        assert self.varType.count('c')+self.varType.count('i') == len(self.ub)\
+                            , ('Each specified continuous, binary, and '
+                            'integer variable must  have a corresponding '
+                            'upper and lower bounds. {}  variables and {} '
+                            'bounds specified'.format(self.varType.count('c')\
                              + self.varType.count('i'), len(self.lb)))
         assert max(len(self.varType) - 1 - self.varType[::-1].index('c') \
                      if 'c' in self.varType else -1,
                    len(self.varType) - 1 - self.varType[::-1].index('b') \
-                     if 'b' in self.varType else -1,
-                   len(self.varType) - 1 - self.varType[::-1].index('i') \
                      if 'i' in self.varType else -1) \
                     < self.varType.index('d') if 'd' in self.varType else \
                       len(self.varType), ('The discrete variables must be '
@@ -424,12 +419,10 @@ class ProblemParameters(object):
         assert len(self.lb) == len(self.ub), ('The lower and upper bounds must '
                     'have the same dimensions. lb = {}, ub = {}'.format(
                     len(self.lb), len(self.ub)))
-        assert set(self.varType).issubset(['c', 'i', 'd', 'x', 'f', 'cx', 'dx',
-                                           'ix', 'xc', 'xd', 'xi']), ('The '
+        assert set(self.varType).issubset(['c', 'i', 'd', 'x', 'f']), ('The '
                     'variable specifications do not match the allowed values '
-                    'of "c", "i", "d", "x", "f", "cx", "dx", "ix", "xc", '
-                    '"xd", or "xi". The varTypes specified is  {}'.format(
-                    self.varType))
+                    'of "c", "i", "d", "x", "f". The varTypes specified is  '
+                    '{}'.format(self.varType))
         if self.ub and self.lb != []:
             assert np.all(self.ub > self.lb), ('All upper-bound values must '
                     'be greater than lower-bound values')
@@ -461,11 +454,12 @@ class ProblemParameters(object):
             the design.
         """
 
-        if sum(self.dID) != 0:
+        varID = self.dID+self.xID
+        if sum(varID) != 0:
             tmpVar = []
             i = 0
-            for j in range(len(self.dID)):
-                if self.dID[j] == 1:
+            for j in range(len(varID)):
+                if varID[j] == 1:
                     tmpVar.append(self.discreteVals[i][int(variables[j])])
                     i += 1
                 elif self.iID[j] == 1:
@@ -489,12 +483,14 @@ class ProblemParameters(object):
         @return \e array: An array containing the variables associated with
             the design.
         """
+
+        varID = self.dID+self.xID
         variables = variables.tolist()
-        if sum(self.dID) != 0:
+        if sum(varID) != 0:
             tmpVar = []
             i = 0
-            for j in range(len(self.dID)):
-                if self.dID[j] == 1:
+            for j in range(len(varID)):
+                if varID[j] == 1:
                     tmpVar.append(self.discreteVals[i].index(variables[j]))
                     i += 1
                 else:

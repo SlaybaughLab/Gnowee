@@ -143,7 +143,7 @@ class TSP(object):
         probParams.objective = ObjectiveFunction('tsp')
         probParams.lb = np.zeros(self.dimension)
         probParams.ub = np.ones_like(probParams.lb)*(self.dimension-1)
-        probParams.varType = ['dx' for v in probParams.ub]
+        probParams.varType = ['x' for v in probParams.ub]
         probParams.discreteVals = [self.nodes] * self.dimension
         probParams.optimum = self.optimum
         probParams.pltTitle = self.name

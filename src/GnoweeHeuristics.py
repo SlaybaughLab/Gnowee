@@ -315,7 +315,7 @@ class GnoweeHeuristics(ProblemParameters):
             used.append(k)
             children.append(cp.deepcopy(pop[k]))
 
-            #Calculate Levy flight
+            # Calculate Levy flight for discrete, integer, and binary variables
             stepSize = np.round(step[k, :]*varID*(self.ub-self.lb))
             if all(stepSize == 0):
                 stepSize = np.round(rand(len(varID))*(self.ub-self.lb))*varID
@@ -617,7 +617,7 @@ class GnoweeHeuristics(ProblemParameters):
                         np.sum(self.dID), len(self.discreteVals)))
 
         # Map the discrete variables for fitness calculation and storage
-        if sum(self.dID) != 0:
+        if sum(self.dID)+sum(self.xID) != 0:
             for c in range(0, len(children)):
                 children[c] = self.map_to_discretes(children[c])
             for p in parents:
@@ -628,6 +628,7 @@ class GnoweeHeuristics(ProblemParameters):
 
         # Find worst fitness to use as the penalty
         for i in range(0, len(children), 1):
+            print children[i]
             fnew = self.objective.func(children[i])
             if fnew > self.penalty:
                 self.penalty = fnew
@@ -707,7 +708,7 @@ class GnoweeHeuristics(ProblemParameters):
                 timeline[-1].evaluations += feval
 
         # Map the discrete variables for fitness calculation and storage
-        if sum(self.dID) != 0:
+        if sum(self.dID)+sum(self.xID) != 0:
             for p in parents:
                 p.variables = self.map_from_discretes(p.variables)
 
