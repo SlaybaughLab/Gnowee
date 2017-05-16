@@ -437,7 +437,7 @@ class ProblemParameters(object):
                     'variable specifications do not match the allowed values '
                     'of "c", "i", "d", "x", "f". The varTypes specified is  '
                     '{}'.format(self.varType))
-        if self.ub and self.lb != []:
+        if len(self.ub) != 0 and len(self.lb) != 0:
             assert np.all(self.ub > self.lb), ('All upper-bound values must '
                     'be greater than lower-bound values')
 
