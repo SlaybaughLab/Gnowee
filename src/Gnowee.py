@@ -16,10 +16,12 @@ included in the src directory.
 
 @author James Bevins
 
-@date 13May17
+@date 15May17
 """
 
 import time
+
+import numpy as np
 
 from numpy.random import rand
 
@@ -51,6 +53,8 @@ def main(gh):
     # Initialize population with random initial solutions
     initNum = max(gh.population*2, len(gh.ub)*10)
     initParams = gh.initialize(initNum, gh.initSampling)
+
+    # Build the population
     initNum = min(initNum, len(initParams))
     for p in range(0, initNum, 1):
         pop.append(Parent(fitness=1E99, variables=initParams[p]))
@@ -58,8 +62,7 @@ def main(gh):
     # Calculate initial fitness values and trim population to gh.population
     (pop, changes, timeline) = gh.population_update(pop,
                                                  [p.variables for p in pop],
-                                                 timeline=timeline,
-                                                 genUpdate=1)
+                                                 timeline=timeline)
     if len(pop) > gh.population:
         pop = pop[0:gh.population]
     else:
@@ -81,45 +84,48 @@ def main(gh):
         gh.fracLevy = rand()*fl
 
         # Levy flights
-        if sum(gh.iID)+sum(gh.dID) >= 1 and sum(gh.cID) >= 1:
+        if sum(gh.iID)+sum(gh.dID) >= 1:
             (dChildren, dind) = gh.disc_levy_flight([p.variables for p in pop])
+        else:
+            dind = []
+        if sum(gh.cID) >= 1:
             (cChildren, cind) = gh.cont_levy_flight([p.variables for p in pop])
-            children = []
-            ind = []
-            for i in range(0, len(cind)):
-                if cind[i] in dind:
-                    t = dind.index(cind[i])
-                    children.append(dChildren[t]*(gh.iID+gh.dID) \
-                                    +cChildren[i]*gh.cID)
-                    ind.append(cind[i])
-                    del dChildren[t]
-                    del dind[t]
-                else:
-                    children.append(cChildren[i])
-                    ind.append(cind[i])
-            for i in range(len(dind)):
-                children.append(dChildren[i])
-                ind.append(dind[i])
-            (pop, changes, timeline) = gh.population_update(pop, children,
+        else:
+            cind = []
+        if sum(gh.xID) >= 1:
+            (xChildren, xind) = gh.comb_levy_flight([p.variables for p in pop])
+        else:
+            xind = []
+
+        # Combine the results to a single population
+        children, ind = ([] for i in range(2))
+        ind = list(set(cind + dind + xind))
+        for i in range(0, len(ind)):
+            d = np.zeros_like(gh.ub)
+            c = np.zeros_like(gh.ub)
+            x = np.zeros_like(gh.ub)
+            if ind[i] in dind:
+                d = dChildren[dind.index(ind[i])]
+            if ind[i] in cind:
+                c = cChildren[cind.index(ind[i])]
+            if ind[i] in xind:
+                x = xChildren[xind.index(ind[i])]
+
+            # Identify the levy types used in this solution
+            tmpID = 0
+            if sum(d) != 0:
+                tmpID += gh.iID+gh.dID
+            if sum(c) != 0:
+                tmpID += gh.cID
+            if sum(x) != 0:
+                tmpID += gh.xID
+            tmp = (d+c+x)*abs((tmpID)-np.ones_like(tmpID))
+            children.append(tmp+(d*(gh.iID+gh.dID)+c*gh.cID+x*gh.xID))
+
+        (pop, changes, timeline) = gh.population_update(pop, children,
                                                       timeline=timeline,
                                                       adoptedParents=ind,
                                                       mhFrac=0.2)
-
-        elif sum(gh.cID) >= 1 and sum(gh.iID)+sum(gh.dID) == 0:
-            (children, ind) = gh.cont_levy_flight([p.variables for p in pop])
-            (pop, changes, timeline) = gh.population_update(pop, children,
-                                                      timeline=timeline,
-                                                      adoptedParents=ind,
-                                                      mhFrac=0.2,
-                                                      randomParents=True)
-
-        elif sum(gh.cID) == 0 and sum(gh.iID)+sum(gh.dID) >= 1:
-            (children, ind) = gh.disc_levy_flight([p.variables for p in pop])
-            (pop, changes, timeline) = gh.population_update(pop, children,
-                                                     timeline=timeline,
-                                                     adoptedParents=ind,
-                                                     mhFrac=0.2,
-                                                     randomParents=True)
 
         # Crossover
         if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
@@ -144,8 +150,7 @@ def main(gh):
         if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
             children = gh.mutate([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    timeline=timeline,
-                                                    genUpdate=1)
+                                                    timeline=timeline)
 
         # Test generational and function evaluation convergence
         if timeline[-1].generation > gh.stallLimit:
@@ -178,6 +183,10 @@ def main(gh):
         elif timeline[-1].fitness < gh.optimum:
             converge = True
             print "Fitness Convergence"
+
+        # Update Timeline
+        print timeline[-1].generation, timeline[-1].evaluations, timeline[-1].fitness
+        timeline[-1].generation += 1
 
     #Determine execution time
     print "Program execution time was {}.".format(time.time() - startTime)

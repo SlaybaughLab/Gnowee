@@ -13,7 +13,7 @@ Dependencies on pyDOE.
 
 @author James Bevins
 
-@date 12May17
+@date 15May17
 """
 
 import math
@@ -25,7 +25,7 @@ import numpy as np
 
 from scipy.special import gamma
 from pyDOE import lhs
-from numpy.random import rand, randn
+from numpy.random import rand, randn, choice
 from GnoweeUtilities import Switch
 
 #------------------------------------------------------------------------------#
@@ -34,7 +34,8 @@ def initial_samples(lb, ub, method, numSamp):
     @ingroup Sampling
 
     Generate a set of samples in a given phase space. The current methods
-    available are 'random', 'nolh', 'nolh-rp', 'nolh-cdr', or 'lhc'.
+    available are 'random', 'nolh', 'nolh-rp', 'nolh-cdr', 'lhc', or
+    'rand-wor'.
 
     @param lb: \e array \n
         The lower bounds of the design variable(s). \n
@@ -42,7 +43,7 @@ def initial_samples(lb, ub, method, numSamp):
         The upper bounds of the design variable(s). \n
     @param  method: \e string \n
         String representing the chosen sampling method. Valid options are:
-        'random', 'nolh', 'nolh-rp', 'nolh-cdr', or 'lhc'. \n
+        'random', 'nolh', 'nolh-rp', 'nolh-cdr', 'lhc', 'random-wor'. \n
     @param numSamp: \e integer \n
         The number of samples to be generated.  Ignored for nolh algorithms. \n
 
@@ -52,8 +53,8 @@ def initial_samples(lb, ub, method, numSamp):
     assert len(lb) == len(ub), ('Lower and upper bounds have different #s '
                            'of design variables in initial_samples function.')
     assert method == 'random' or method == 'nolh' or method == 'nolh-rp' \
-           or method == 'nolh-cdr' or method == 'lhc', ('An invalid method '
-                                     'was specified for the initial_samples.')
+           or method == 'nolh-cdr' or method == 'lhc' or method == 'rand-wor',\
+                    'An invalid method was specified for the initial_samples.'
     if method == 'nolh' or method == 'nolh-rp' or method == 'nolh-cdr':
         assert len(ub) >= 2 and len(ub) <= 29, ('The Phase space dimensions '
                              'are outside of the bounds for initial_samples.')
@@ -63,6 +64,13 @@ def initial_samples(lb, ub, method, numSamp):
             s = np.zeros((numSamp, len(lb)))
             for i in range(0, numSamp, 1):
                 s[i, :] = (lb+(ub-lb)*rand(len(lb)))
+            break
+
+        # Random without replacement - designed for combinatorial variables
+        if case('rand-wor'):
+            s = np.zeros((numSamp, len(lb)))
+            for i in range(0, numSamp, 1):
+                s[i, :] = choice(len(ub), size=len(ub), replace=False)
             break
 
         # Standard nearly-orthoganal latin hypercube call
@@ -538,7 +546,7 @@ class WeightedRandomGenerator(object):
             The array of weights (Higher = more likely to be selected) \n
         """
 
-        ## @var totals 
+        ## @var totals
         # <em> list or numpy array: </em> The ordinal ranking
         # or data that is used to generate tehe weights.
         self.totals = []

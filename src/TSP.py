@@ -13,7 +13,7 @@ for use in optimization routines.
 
 @author James Bevins
 
-@date 14May17
+@date 15May17
 """
 
 import numpy as np
@@ -150,6 +150,6 @@ class TSP(object):
         probParams.histTitle = self.name
         probParams.cID = np.zeros(self.dimension)
         probParams.iID = np.zeros(self.dimension)
-        probParams.dID = np.ones(self.dimension)
+        probParams.dID = np.zeros(self.dimension)
         probParams.xID = np.ones(self.dimension)
         

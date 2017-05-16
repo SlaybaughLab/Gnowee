@@ -272,9 +272,21 @@ class GnoweeHeuristics(ProblemParameters):
 
         initSamples = initial_samples(self.lb, self.ub, sampleMethod,
                                       numSamples)
+        if sum(self.xID) != 0:
+            xUB = [self.ub[np.where(self.xID == 1)[0][0]]]*len(self.xID)
+            xSamples = initial_samples([0]*len(self.xID), xUB, "rand-wor",
+                                      numSamples)
+
+        # Map to discrete/integers
         for var in range(len(self.varType)):
             if 'i' in self.varType[var] or 'd' in self.varType[var]:
                 initSamples[:, var] = np.rint(initSamples[:, var])
+
+        # Map to combinatorial
+        if sum(self.xID) != 0:
+            initSamples = initSamples*(self.cID+self.iID+self.dID) \
+                          +xSamples*self.xID
+
         return initSamples
 
     def disc_levy_flight(self, pop):
@@ -374,6 +386,59 @@ class GnoweeHeuristics(ProblemParameters):
             #Build child applying variable boundaries
             children[i] = rejection_bounds(pop[k], children[i], stepSize,
                                            self.lb, self.ub)
+
+        return children, used
+
+    def comb_levy_flight(self, pop):
+        """!
+        Generate new children using truncated Levy flights permutation and
+        inversion of current generation design parameters.
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The GnoweeHeuristics pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        # Initialize variables
+        children = [] # Local copy of children generated
+        used = []     # Parents randomly selected once already
+        step = tlf(len(pop), len(pop[0]))
+
+        for i in range(0, int(self.population*self.fracLevy)):
+
+            # Randomly select parent
+            k = int(rand()*self.population)
+            while k in used:
+                k = int(rand()*self.population)
+            used.append(k)
+            children.append(cp.deepcopy(pop[k]))
+
+            # Create a tmp vector of only the combinatorial variables
+            tmp = [children[-1][x] for x in range(0, len(self.xID)) \
+                   if self.xID[x] == 1]
+
+            # Invert the ordering based on levy flight step sizes
+            for j in range(0, len(tmp)-1):
+                flight = (tmp[j]+int(step[i][j]*len(tmp)))%(len(tmp)-1)
+                if tmp[j+1] != flight:
+                    ind = np.where(tmp == flight)[0][0]
+                    if ind > j:
+                        tmp[j+1:ind+1] = reversed(tmp[j+1:ind+1])
+                    if j > ind:
+                        tmp[ind:j+1] = reversed(tmp[ind:j+1])
+
+            # Copy results back into child
+            for x in range(0, len(self.xID)):
+                if self.xID[x] == 1:
+                    children[-1][x] = tmp[0]
+                    del tmp[0]
 
         return children, used
 
@@ -611,9 +676,9 @@ class GnoweeHeuristics(ProblemParameters):
                                                         'handle.')
 
         if self.dID != []:
-            assert np.sum(self.dID) == len(self.discreteVals), ('A map must '
-                       'exist for each discrete variable. {} discrete '
-                       'variables, and {} maps provided.'.format(
+            assert np.sum(self.dID+self.xID) == len(self.discreteVals), ('A '
+                       'map must exist for each discrete variable. {} '
+                       'discrete variables, and {} maps provided.'.format(
                         np.sum(self.dID), len(self.discreteVals)))
 
         # Map the discrete variables for fitness calculation and storage
@@ -628,7 +693,6 @@ class GnoweeHeuristics(ProblemParameters):
 
         # Find worst fitness to use as the penalty
         for i in range(0, len(children), 1):
-            print children[i]
             fnew = self.objective.func(children[i])
             if fnew > self.penalty:
                 self.penalty = fnew
@@ -695,12 +759,12 @@ class GnoweeHeuristics(ProblemParameters):
         # design found
         if timeline != None:
             if len(timeline) < 2:
-                timeline.append(Event(len(timeline)+1, feval,
-                                      parents[0].fitness, parents[0].variables))
+                timeline.append(Event(1, feval, parents[0].fitness,
+                                      parents[0].variables))
             elif parents[0].fitness < timeline[-1].fitness \
                   and abs((timeline[-1].fitness-parents[0].fitness) \
                           /parents[0].fitness) > self.convTol:
-                timeline.append(Event(timeline[-1].generation+1,
+                timeline.append(Event(timeline[-1].generation,
                                       timeline[-1].evaluations+feval,
                                       parents[0].fitness, parents[0].variables))
             else:

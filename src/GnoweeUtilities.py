@@ -8,7 +8,7 @@
 
 @author James Bevins
 
-@date 1May17
+@date 15May17
 """
 
 import numpy as np
@@ -216,7 +216,9 @@ class ProblemParameters(object):
              'x' = combinatorial. All of the variables denoted by x are assumed
                    to be "swappable" in combinatorial permutations and assumed
                    to take discrete values specified in by discreteVals. There
-                   must be at least two variables denoted as combinatorial. \n
+                   must be at least two variables denoted as combinatorial.
+                   The algorithms are only set up to handle one set of
+                   combinatorial variables per optimization problem. \n
              'f' = fixed design variable. Will not be considered of any
                    permutation. \n
         @param discreteVals: <em> list of list(s) </em> \n
@@ -371,10 +373,11 @@ class ProblemParameters(object):
         header += ["Integer ID Vector: {}".format(self.iID)]
         header += ["Discrete ID Vector: {}".format(self.dID)]
         header += ["Combinatorial ID Vector: {}".format(self.xID)]
-        if self.discreteVals[0] == self.discreteVals[1]:
-            header += [("Discrete Values (only printing elem 1 of {}): {}"
-                       "".format(len(self.discreteVals[0]),
-                                 self.discreteVals[0]))]
+        if len(self.discreteVals) > 1:
+            if self.discreteVals[0] == self.discreteVals[1]:
+                header += [("Discrete Values (only printing elem 1 of {}): "
+                           "{}".format(len(self.discreteVals[0]),
+                                     self.discreteVals[0]))]
         else:
             header += [("Discrete Values: {} ".format(self.discreteVals))]
         header += ["Global Optimum: {}".format(self.optimum)]
@@ -410,7 +413,7 @@ class ProblemParameters(object):
                              + self.varType.count('i'), len(self.lb)))
         assert max(len(self.varType) - 1 - self.varType[::-1].index('c') \
                      if 'c' in self.varType else -1,
-                   len(self.varType) - 1 - self.varType[::-1].index('b') \
+                   len(self.varType) - 1 - self.varType[::-1].index('i') \
                      if 'i' in self.varType else -1) \
                     < self.varType.index('d') if 'd' in self.varType else \
                       len(self.varType), ('The discrete variables must be '
