@@ -18,7 +18,7 @@ interest based on the fitness landscape and type of variables.
 
 @author James Bevins
 
-@date 14May17
+@date 16May17
 """
 
 import numpy as np
@@ -41,7 +41,7 @@ class GnoweeHeuristics(ProblemParameters):
     def __init__(self, population=25, initSampling='lhc', fracDiscovered=0.2,
                  fracElite=0.2, fracLevy=0.2, alpha=1.5, gamma=1, n=1,
                  scalingFactor=10.0, penalty=0.0, maxGens=20000,
-                 maxFevals=200000, convTol=1e-6, stallLimit=225,
+                 maxFevals=200000, convTol=1e-6, stallLimit=10000,
                  optConvTol=1e-2, **kwargs):
         """!
         Constructor to build the GnoweeHeuristics class.  This class must be
@@ -96,8 +96,8 @@ class GnoweeHeuristics(ProblemParameters):
             The minimum change of the best objective value before the search
             terminates. \n
         @param stallLimit: \e integer \n
-            The maximum number of generations to search without a descrease
-            exceeding convTol. \n
+            The maximum number of evaluations to search without an
+            improvement. \n
         @param optConvTol: \e float \n
             The maximum deviation from the best know fitness value before the
             search terminates. \n

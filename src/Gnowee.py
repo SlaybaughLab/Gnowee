@@ -16,7 +16,7 @@ included in the src directory.
 
 @author James Bevins
 
-@date 15May17
+@date 16May17
 """
 
 import time
@@ -75,8 +75,7 @@ def main(gh):
 
     # Iterate until termination criterion met
     converge = False
-    while timeline[-1].generation <= gh.maxGens and \
-          timeline[-1].evaluations <= gh.maxFevals and converge == False:
+    while converge == False:
 
         # Sample generational heuristic probabilities
         gh.fracDiscovered = rand()*fd
@@ -168,17 +167,12 @@ def main(gh):
                                                      adoptedParents=ind)
 
         # Test generational and function evaluation convergence
-        if timeline[-1].generation > gh.stallLimit:
-            if timeline[-1].generation > timeline[-2].generation+gh.stallLimit:
+        if timeline[-1].evaluations > gh.stallLimit:
+            if timeline[-1].evaluations > \
+               timeline[-2].evaluations+gh.stallLimit:
                 converge = True
-                print "Generational Stall at generation #{}".format(
-                    timeline[-1].generation)
-            elif (timeline[-2].fitness-timeline[-1].fitness) \
-                  /timeline[-2].fitness < gh.convTol:
-                if timeline[-1].generation > \
-                      timeline[-2].generation+gh.stallLimit:
-                    converge = True
-                    print "Generational Convergence"
+                print "Stall at evaluation #{}".format(
+                    timeline[-1].evaluations)
         elif timeline[-1].generation > gh.maxGens:
             converge = True
             print "Max generations reached."
@@ -200,7 +194,6 @@ def main(gh):
             print "Fitness Convergence"
 
         # Update Timeline
-        #print timeline[-1].generation, timeline[-1].evaluations, timeline[-1].fitness
         timeline[-1].generation += 1
 
     #Determine execution time
