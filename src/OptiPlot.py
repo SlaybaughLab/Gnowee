@@ -374,10 +374,10 @@ def plot_optimization(data, label, title=''):
     ax.yaxis.set_major_formatter(majorFormatter)
     if all(y) > 0:
         ax.set_yscale('log')
-    ax.set_ylim(np.min(y), y[1])
+    ax.set_ylim(np.min(y), np.max(y))
     ax.set_xlabel('\\textbf{Parameter Value}', fontsize=15, y=-0.04)
     #ax.set_xscale('log')
-    ax.set_xlim(x[1], np.max(x))
+    ax.set_xlim(x[0], np.max(x))
 
     plt.yticks(fontsize=14)
     plt.xticks(fontsize=14)
