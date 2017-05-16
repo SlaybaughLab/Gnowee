@@ -1,6 +1,6 @@
 ##Folders
 src/.ipynb_checkpoints/*
-BenchmarkPlots/.ipynb_checkpoints/*
+Benchmarks/.ipynb_checkpoints/*
 OptimizationAlgorithms/.ipynb_checkpoints/*
 docs/html
 docs/latex
