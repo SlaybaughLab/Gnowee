@@ -122,6 +122,7 @@ class ObjectiveFunction(object):
              A string identifying the objective function to be used. \n
         """
         try:
+            print funcName
             self.func = self._FUNC_DICT[funcName]
             assert hasattr(self.func, '__call__'), 'Invalid function handle'
         except KeyError:

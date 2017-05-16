@@ -644,10 +644,10 @@ class ProblemParameters(object):
                                    '\\textbf{1st Shaft D}',
                                    '\\textbf{2nd Shaft D}'])
                 break
-            if case('mi_chemical_proccess'):
+            if case('mi_chemical_process'):
                 ProblemParameters.__init__(self,
-                                  ObjectiveFunction('mi_chemical_proccess'),
-                                  Constraint('mi_chemical_proccess', 0.0),
+                                  ObjectiveFunction('mi_chemical_process'),
+                                  Constraint('mi_chemical_process', 0.0),
                                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                                   [10.0, 10.0, 10.0, 1, 1, 1, 1],
                                   ['c', 'c', 'c', 'i', 'i', 'i', 'i'], [],
@@ -824,7 +824,7 @@ class ProblemParameters(object):
                                   ['\\textbf{Fitness}'])
                 break
             if case():
-                print ('ERROR: Fishing in the deep end you are. Define your own'
+                print ('ERROR: Fishing in the deep end you are. Define your own '
                        'parameter set you must.')
 
 #------------------------------------------------------------------------------#
