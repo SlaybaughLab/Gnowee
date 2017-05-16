@@ -428,7 +428,13 @@ class GnoweeHeuristics(ProblemParameters):
             for j in range(0, len(tmp)-1):
                 flight = (tmp[j]+int(step[i][j]*len(tmp)))%(len(tmp)-1)
                 if tmp[j+1] != flight:
-                    ind = np.where(tmp == flight)[0][0]
+                    try:
+                        ind = np.where(tmp == flight)[0][0]
+                    except IndexError:
+                        print len(tmp), tmp
+                        print len(set(tmp)), set(tmp)
+                        print flight
+                        exit()
                     if ind > j:
                         tmp[j+1:ind+1] = reversed(tmp[j+1:ind+1])
                     if j > ind:
@@ -516,6 +522,10 @@ class GnoweeHeuristics(ProblemParameters):
         Generate new designs by using inver-over on combinatorial variables.
         Adapted from ideas in Tao, "Iver-over Operator for the TSP."
 
+        Although logic originally designed for combinatorial variables, it
+        works for all variables and is used for all here.  The primary
+        difference is the number of times that the crossover is performed.
+
         @param self: <em> GnoweeHeuristic pointer </em> \n
             The GnoweeHeuristics pointer. \n
         @param pop: <em> list of arrays </em> \n
@@ -526,24 +536,82 @@ class GnoweeHeuristics(ProblemParameters):
             design variables representing the updated design parameters.
         """
 
-        children = []
+        children, tmpComb, tmpNonComb, used = ([] for i in range(4))
 
         for i in range(0, int(len(pop)*self.fracElite), 1):
-            #Randomly choose starting parent #2
+            # Randomly choose starting parent #2
             r = int(rand()*len(pop))
             while r == i:
                 r = int(rand()*len(pop))
 
-            # Randomly choose crossover point
-            c = int(rand()*len(pop[i]))
-            if rand() < 0.5:
-                children.append(np.array(pop[i][0:c+1].tolist() \
-                                         +pop[r][c+1:].tolist()))
-            else:
-                children.append(np.array(pop[r][0:c+1].tolist()\
-                                         +pop[i][c+1:].tolist()))
+            # Break variables space into combinatorial and non-combinatorial
+            if sum(self.cID+self.dID+self.iID) != 0:
+                nonComb1 = pop[i][:np.where((self.cID+self.dID+self.iID) == 1)\
+                              [0][-1]+1]
+                nonComb2 = pop[r][:np.where((self.cID+self.dID+self.iID) == 1)\
+                              [0][-1]+1]
+            if sum(self.xID) != 0:
+                comb1 = pop[i][:np.where(self.xID == 1)[0][-1]+1]
+                comb2 = pop[r][:np.where(self.xID == 1)[0][-1]+1]
 
-        return children
+            # Randomly choose crossover point and break some ankles
+            if sum(self.cID+self.dID+self.iID) != 0:
+                c = int(rand()*len(nonComb1))
+                tmpNonComb.append(np.array(nonComb1[0:c+1].tolist() \
+                                           +nonComb2[c+1:].tolist()))
+                tmpNonComb.append(np.array(nonComb2[0:c+1].tolist()\
+                                           +nonComb1[c+1:].tolist()))
+                # Track parents from whence ye came
+                used.append(i)
+                used.append(r)
+
+            # Combinatorial crossover
+            if sum(self.xID) != 0:
+                # Loop over every item in the combinatorial set starting at a
+                # randomly chosen pt
+                c = int(rand()*len(comb1))
+                for c1 in range(c, len(comb1), 1):
+                    d2 = (contains_sublist(comb2, comb1[c1])+1)%len(comb1)
+                    d1 = (contains_sublist(comb1, comb2[d2]))
+                    c2 = (contains_sublist(comb2,
+                                           comb1[(d1+1)%len(comb1)]))%len(comb1)
+
+                    # Create first child
+                    tmp1 = cp.copy(comb1)
+                    if c1 < d1:
+                        tmp1[c1+1:d1+1] = list(reversed(tmp1[c1+1:d1+1]))
+                    else:
+                        tmp1[d1:c1] = list(reversed(tmp1[d1:c1]))
+
+                    # Create second child
+                    tmp2 = cp.copy(comb2)
+                    if c2 < d2:
+                        tmp2[c2:d2] = list(reversed(tmp2[c2:d2]))
+                    else:
+                        tmp2[d2+1:c2+1] = list(reversed(tmp2[d2+1:c2+1]))
+
+                    # Put the design vectors back together again into
+                    # frankenchildren
+                    if sum(self.cID+self.dID+self.iID) == 0 \
+                          and sum(self.xID) != 0:
+                        children.append(tmp1)
+                        children.append(tmp2)
+                    elif sum(self.cID+self.dID+self.iID) != 0 \
+                          and sum(self.xID) != 0:
+                        children.append(np.concatenate(tmpNonComb[-2],
+                                                       tmpComb1))
+                        children.append(np.concatenate(tmpNonComb[-1],
+                                                       tmpComb2))
+
+                    # Track parents from whence ye came
+                    used.append(i)
+                    used.append(r)
+
+        # Put the design vectors back together again into frankenchildren
+        if sum(self.cID+self.dID+self.iID) != 0 and sum(self.xID) == 0:
+            children = tmpNonComb
+
+        return children, used
 
     def crossover(self, pop):
         """!
@@ -713,33 +781,33 @@ class GnoweeHeuristics(ProblemParameters):
             if fnew < parents[j].fitness:
                 parents[j].fitness = fnew
                 parents[j].variables = cp.copy(children[i])
-                parents[i].changeCount += 1
-                parents[i].stallCount = 0
+                parents[j].changeCount += 1
+                parents[j].stallCount = 0
                 replace += 1
-                if parents[i].changeCount >= 25 and \
+                if parents[j].changeCount >= 25 and \
                       j >= self.population*self.fracElite:
-                    parents[i].variables = self.initialize(1, 'random'
+                    parents[j].variables = self.initialize(1, 'random'
                                                           ).flatten()
-                    parents[i].variables = self.map_to_discretes(
-                                                  parents[i].variables)
-                    fnew = self.objective.func(parents[i].variables)
+                    parents[j].variables = self.map_to_discretes(
+                                                  parents[j].variables)
+                    fnew = self.objective.func(parents[j].variables)
                     for con in self.constraints:
-                        fnew += con.func(parents[i].variables)
-                    parents[i].fitness = fnew
-                    parents[i].changeCount = 0
+                        fnew += con.func(parents[j].variables)
+                    parents[j].fitness = fnew
+                    parents[j].changeCount = 0
             else:
                 parents[j].stallCount += 1
                 if parents[j].stallCount > 50000 and j != 0:
-                    parents[i].variables = self.initialize(1, 'random'
+                    parents[j].variables = self.initialize(1, 'random'
                                                           ).flatten()
-                    parents[i].variables = self.map_to_discretes(
-                                                  parents[i].variables)
-                    fnew = self.objective.func(parents[i].variables)
+                    parents[j].variables = self.map_to_discretes(
+                                                  parents[j].variables)
+                    fnew = self.objective.func(parents[j].variables)
                     for con in self.constraints:
-                        fnew += con.func(parents[i].variables)
-                    parents[i].fitness = fnew
-                    parents[i].changeCount = 0
-                    parents[i].stallCount = 0
+                        fnew += con.func(parents[j].variables)
+                    parents[j].fitness = fnew
+                    parents[j].changeCount = 0
+                    parents[j].stallCount = 0
 
                 # Metropis-Hastings algorithm
                 r = int(rand()*len(parents))
@@ -854,3 +922,20 @@ def rejection_bounds(parent, child, stepSize, lb, ub):
                 child[i] = child[i]-stepSize[i]
                 stepReductionCount += 1
     return child
+
+#------------------------------------------------------------------------------#
+def contains_sublist(lst, sublst):
+    """!
+    @ingroup GnoweeHeuristics
+    Find index of sublist, if it exists.
+
+    @param lst: \e list \n
+        The list in which to search for sublst. \n
+    @param sublst: \e list \n
+        The list to search for. \n
+
+    @return \e integer: Index location of sublst in lst. \n
+    """
+    for i in range(0, len(lst), 1):
+        if sublst == lst[i]:
+            return i

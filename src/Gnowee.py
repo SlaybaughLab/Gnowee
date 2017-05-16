@@ -128,26 +128,27 @@ def main(gh):
                                                       mhFrac=0.2)
 
         # Crossover
-        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
+        if sum(gh.cID + gh.iID + gh.dID) >= 1:
             (children, ind) = gh.crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                      timeline=timeline)
 
         # Scatter Search
-        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
+        if sum(gh.cID + gh.iID + gh.dID) >= 1:
             (children, ind) = gh.scatter_search([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                      timeline=timeline,
                                                      adoptedParents=ind)
 
         # Elite Crossover
-        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
-            children = gh.elite_crossover([p.variables for p in pop])
+        if sum(gh.cID + gh.iID + gh.dID + gh.xID) >= 1:
+            (children, ind) = gh.elite_crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    timeline=timeline)
+                                                    timeline=timeline,
+                                                     adoptedParents=ind)
 
         # Mutation
-        if sum(gh.cID)+sum(gh.iID)+sum(gh.dID) >= 1:
+        if sum(gh.cID + gh.iID + gh.dID) >= 1:
             children = gh.mutate([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                     timeline=timeline)
@@ -185,7 +186,7 @@ def main(gh):
             print "Fitness Convergence"
 
         # Update Timeline
-        print timeline[-1].generation, timeline[-1].evaluations, timeline[-1].fitness
+        #print timeline[-1].generation, timeline[-1].evaluations, timeline[-1].fitness
         timeline[-1].generation += 1
 
     #Determine execution time

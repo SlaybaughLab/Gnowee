@@ -203,13 +203,16 @@ class ProblemParameters(object):
             the order specified in varType and lb. \n
         @param varType: <em> list or array </em> \n
             The type of variable for each position in the upper and lower
-            bounds array. Discrete variables are to be included last as they
-            are specified separatly from the lb/ub throught the discreteVals
-            optional input. \n
+            bounds array. Discrete and combinatorial variables are to be
+            included last as they are specified separately from the lb/ub
+            through the discreteVals optional input. The order should be
+            the same as shown below. \n
             Allowed values: \n
              'c' = continuous over a given range (range specified in lb &
                    ub). \n
              'i' = integer/binary (difference denoted by ub/lb). \n
+             'f' = fixed design variable. Will not be considered of any
+                   permutation. \n
              'd' = discrete where the allowed values are given by the option
                    discreteVals nxm arrary with n=# of discrete variables and
                    m=# of values that can be taken for each variable. \n
@@ -218,15 +221,23 @@ class ProblemParameters(object):
                    to take discrete values specified in by discreteVals. There
                    must be at least two variables denoted as combinatorial.
                    The algorithms are only set up to handle one set of
-                   combinatorial variables per optimization problem. \n
-             'f' = fixed design variable. Will not be considered of any
-                   permutation. \n
+                   combinatorial variables per optimization problem.
+                   Combinatorial variales should be specified last and as a
+                   contiguous group. \n
         @param discreteVals: <em> list of list(s) </em> \n
-            nxm with n=# of discrete variables and m=# of values that can be
-            taken for each variable. For example, if you had two variables
-            representing the tickness and diameter of a cylinder that take
-            standard values, the discreteVals could be specified as: \n
+            nxm with n=# of discrete and combinatorial variables and m=# o
+            f values that can be taken for each variable. For example, if you
+            had two variables representing the tickness and diameter of a
+            cylinder that take standard values, the discreteVals could be
+            specified as: \n
             discreteVals = [[0.125, 0.25, 0.375], [0.25, 0.5, 075]] \n
+            For combinatorial problems, you must specify the same possible
+            values that can be taken n times, where n is the number of different
+            positions in the combinatorial sequence. suppose you had a gear that
+            could be placed at position 2, 3, 4, or 5. The discreteVals would be
+            specified as (assuming no other discretes): \n
+            discreteVals = [[2, 3, 4, 5], [2, 3, 4, 5], [2, 3, 4, 5],
+            [2, 3, 4, 5]] \ n
             Gnowee will then map the optimization results to these allowed
             values. \n
         @param optimum: \e float \n
@@ -432,7 +443,7 @@ class ProblemParameters(object):
 
         # Ensure discreteVals is a list
         if type(self.discreteVals) != list:
-            self.DiscreteVals = self.discreteVals.tolist()
+            self.discreteVals = self.discreteVals.tolist()
 
         #  Append discretes to lb and ubs and convert to numpy arrays
         for d in range(len(self.discreteVals)):
