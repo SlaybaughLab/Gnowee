@@ -663,7 +663,7 @@ class GnoweeHeuristics(ProblemParameters):
         population vectors to a third vector.  Ideas adapted from Storn,
         "Differential Evolution - A Simple and Efficient Heuristic for Global
         Optimization over Continuous Spaces" and Yang, "Nature Inspired
-        Optimmization Algorithms"
+        Optimization Algorithms"
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
             The GnoweeHeuristics pointer. \n
@@ -698,6 +698,109 @@ class GnoweeHeuristics(ProblemParameters):
             children.append(simple_bounds(tmp, self.lb, self.ub))
 
         return children
+
+    def two_opt(self, pop):
+        """!
+        Generate new children using the two_opt operator.
+
+        Ideas adapted from:
+        Lin and Kernighan, "An Effective Heurisic Algorithm for the Traveling
+        Salesman Problem"
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The GnoweeHeuristics pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        # Initialize variables
+        children, used = ([] for i in range(2))
+
+        for i in range(0, int(self.fracElite*len(pop)), 1):
+            for break1 in range(0, int(self.fracElite*len(pop[i])), 1):
+                breaks = np.sort((np.random.rand(2)*len(pop[i])//1))
+                breaks[1] = int(breaks[0] \
+                                + tlf(1, 1)[0, 0]*len(pop[i]))%len(pop[i])
+                while abs(breaks[0]-breaks[1]) < 2:
+                    breaks[1] = int(breaks[0] \
+                                + tlf(1, 1)[0, 0]*len(pop[i]))%len(pop[i])
+                    np.sort(breaks)
+
+                # Create the child
+                children.append(pop[i])
+                children[-1][int(breaks[0]):int(breaks[1])] = list(reversed(
+                                      pop[i][int(breaks[0]):int(breaks[1])]))
+                used.append(i)
+
+        return children, used
+
+    def three_opt(self, pop):
+        """!
+        Generate new children using the three_opt operator.
+
+        Ideas adapted from:
+        Lin and Kernighan, "An Effective Heurisic Algorithm for the Traveling
+        Salesman Problem"
+
+        @param self: <em> GnoweeHeuristic pointer </em> \n
+            The GnoweeHeuristics pointer. \n
+        @param pop: <em> list of arrays </em> \n
+            The current parent sets of design variables representing system
+            designs for the population. \n
+
+        @return <em> list of arrays: </em>   The proposed children sets of
+            design variables representing the updated design parameters.
+        @return \e list: A list of the identities of the chosen index for
+            each child.
+        """
+
+        # Initialize variables
+        children, used = ([] for i in range(2))
+
+        for i in range(0, len(pop), 1):
+            tmp = []   # Make a local copy of current parent designs
+
+            # Generate 3 random nodes
+            breaks = np.sort(np.random.rand(3)*len(pop[i])//1)
+
+            # Ensure that 3 different nodes are selected
+            while breaks[1] == breaks[0] or breaks[1] == breaks[2]:
+                breaks[1] = (np.random.rand()*len(pop[i])//1)
+                breaks = np.sort(breaks)
+            while breaks[2] == breaks[0]:
+                breaks[2] = (np.random.rand()*len(pop[i])//1)
+            breaks = np.sort(breaks)
+
+            # Make reconnections first way
+            tmp[0:int(breaks[0])] = pop[i][0:int(breaks[0])]
+            tmp[len(tmp):int(len(tmp)+breaks[2]-breaks[1])] = \
+                                       pop[i][int(breaks[1]):int(breaks[2])]
+            tmp[len(tmp):int(len(tmp)+breaks[1]-breaks[0])] = \
+                                       pop[i][int(breaks[0]):int(breaks[1])]
+            tmp[len(tmp):int(len(tmp)+breaks[2]-len(pop[i]))] = \
+                                       pop[i][int(breaks[2]):len(pop[i])]
+            children.append(tmp)
+            used.append(i)
+
+            # Make reconnections second way
+            tmp = []   # Reset local copy of current parent designs
+            tmp[0:int(breaks[0])] = pop[i][0:int(breaks[0])]
+            tmp[len(tmp):int(len(tmp)+breaks[1]-breaks[0])] = \
+                        list(reversed(pop[i][int(breaks[0]):int(breaks[1])]))
+            tmp[len(tmp):int(len(tmp)+breaks[2]-breaks[1])] = \
+                        reversed(pop[i][int(breaks[1]):int(breaks[2])])
+            tmp[len(tmp):int(len(tmp)+breaks[2]-len(pop[i]))] = \
+                        pop[i][int(breaks[2]):len(pop[i])]
+            children.append(tmp)
+            used.append(i)
+
+        return children, used
 
     def population_update(self, parents, children, timeline=None,
                           genUpdate=0, adoptedParents=[], mhFrac=0.0,

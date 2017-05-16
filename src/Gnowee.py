@@ -83,6 +83,13 @@ def main(gh):
         gh.fracElite = rand()*fe
         gh.fracLevy = rand()*fl
 
+        # 3-Opt
+        if sum(gh.xID) >= 1:
+            (children, ind) = gh.three_opt([p.variables for p in pop])
+            (pop, changes, timeline) = gh.population_update(pop, children,
+                                                    timeline=timeline,
+                                                     adoptedParents=ind)
+
         # Levy flights
         if sum(gh.iID)+sum(gh.dID) >= 1:
             (dChildren, dind) = gh.disc_levy_flight([p.variables for p in pop])
@@ -140,6 +147,12 @@ def main(gh):
                                                      timeline=timeline,
                                                      adoptedParents=ind)
 
+        # Mutation
+        if sum(gh.cID + gh.iID + gh.dID) >= 1:
+            children = gh.mutate([p.variables for p in pop])
+            (pop, changes, timeline) = gh.population_update(pop, children,
+                                                    timeline=timeline)
+
         # Elite Crossover
         if sum(gh.cID + gh.iID + gh.dID + gh.xID) >= 1:
             (children, ind) = gh.elite_crossover([p.variables for p in pop])
@@ -147,11 +160,12 @@ def main(gh):
                                                     timeline=timeline,
                                                      adoptedParents=ind)
 
-        # Mutation
-        if sum(gh.cID + gh.iID + gh.dID) >= 1:
-            children = gh.mutate([p.variables for p in pop])
+        # 2-Opt
+        if sum(gh.xID) >= 1:
+            (children, ind) = gh.two_opt([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    timeline=timeline)
+                                                    timeline=timeline,
+                                                     adoptedParents=ind)
 
         # Test generational and function evaluation convergence
         if timeline[-1].generation > gh.stallLimit:
