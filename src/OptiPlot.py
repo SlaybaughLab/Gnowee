@@ -347,11 +347,12 @@ def plot_optimization(data, label, title=''):
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Markers; currently hard wired
-    marker = ['ko-', 'k^-', 'k+-', 'ks-', 'kd-', 'k*-']
+    marker = ['ko-', 'k^-', 'k+-', 'ks-', 'kd-', 'k*-', 'k>-']
 
     # Build Plot if only one set of data passed
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
+    print len(data), label
     for i in range(0, len(data), 1):
         x = data[i, :, 0]
         y = data[i, :, 1]
@@ -374,7 +375,7 @@ def plot_optimization(data, label, title=''):
     ax.yaxis.set_major_formatter(majorFormatter)
     if all(y) > 0:
         ax.set_yscale('log')
-    ax.set_ylim(np.min(y), np.max(y))
+    ax.set_ylim(0.8*min(data[:, :, 1]), 1.2*max(data[:, :, 1]))
     ax.set_xlabel('\\textbf{Parameter Value}', fontsize=15, y=-0.04)
     #ax.set_xscale('log')
     ax.set_xlim(x[0], np.max(x))
