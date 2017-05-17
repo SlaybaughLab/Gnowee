@@ -69,7 +69,7 @@ def main(gh):
         gh.population = len(pop)
 
     # Set initial heuristic probabilities
-    fd = gh.fracDiscovered
+    fm = gh.fracMutation
     fe = gh.fracElite
     fl = gh.fracLevy
 
@@ -78,7 +78,7 @@ def main(gh):
     while converge == False:
 
         # Sample generational heuristic probabilities
-        gh.fracDiscovered = rand()*fd
+        gh.fracMutation = rand()*fm
         gh.fracElite = rand()*fe
         gh.fracLevy = rand()*fl
 

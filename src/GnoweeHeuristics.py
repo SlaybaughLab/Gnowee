@@ -38,7 +38,7 @@ class GnoweeHeuristics(ProblemParameters):
     """
 
     ##
-    def __init__(self, population=25, initSampling='lhc', fracDiscovered=0.2,
+    def __init__(self, population=25, initSampling='lhc', fracMutation=0.2,
                  fracElite=0.2, fracLevy=0.2, alpha=1.5, gamma=1, n=1,
                  scalingFactor=10.0, penalty=0.0, maxGens=20000,
                  maxFevals=200000, convTol=1e-6, stallLimit=10000,
@@ -65,7 +65,7 @@ class GnoweeHeuristics(ProblemParameters):
             The method used to sample the phase space and create the initial
             population. Valid options are 'random', 'nolh', 'nolh-rp',
             'nolh-cdr', and 'lhc' as specified in init_samples(). \n
-        @param fracDiscovered : \e float \n
+        @param fracMutation : \e float \n
             Discovery probability used for the mutate() heuristic. \n
         @param fracElite: \e float \n
             Elite fraction probability used for the scatter_search(),
@@ -122,11 +122,11 @@ class GnoweeHeuristics(ProblemParameters):
         #'nolh-cdr', and 'lhc' as specified in init_samples().
         self.initSampling = initSampling
 
-        ## @var fracDiscovered
+        ## @var fracMutation
         # \e float:
         # Discovery probability used for the mutate() heuristic.
-        self.fracDiscovered = fracDiscovered
-        assert self.fracDiscovered >= 0 and self.fracDiscovered <= 1, ('The '
+        self.fracMutation = fracMutation
+        assert self.fracMutation >= 0 and self.fracMutation <= 1, ('The '
                                  'probability of discovery must exist on (0,1]')
 
         ## @var fracElite
@@ -212,7 +212,7 @@ class GnoweeHeuristics(ProblemParameters):
         return "GnoweeHeuristics({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, \
                                  {}, {}, {}, {}, {})".format(self.population,
                                                   self.initSampling,
-                                                  self.fracDiscovered,
+                                                  self.fracMutation,
                                                   self.fracElite,
                                                   self.fracLevy,
                                                   self.alpha,
@@ -237,7 +237,7 @@ class GnoweeHeuristics(ProblemParameters):
         header = ["  GnoweeHeuristics:"]
         header += ["Population = {}".format(self.population)]
         header += ["Sampling Method = {}".format(self.initSampling)]
-        header += ["Discovery Fraction = {}".format(self.fracDiscovered)]
+        header += ["Discovery Fraction = {}".format(self.fracMutation)]
         header += ["Elitism Fraction = {}".format(self.fracElite)]
         header += ["Levy Fraction = {}".format(self.fracLevy)]
         header += ["Levy Alpha = {}".format(self.alpha)]
@@ -682,7 +682,7 @@ class GnoweeHeuristics(ProblemParameters):
         children = []
 
         #Discover (1-fd); K is a status vector to see if discovered
-        k = rand(len(pop), len(pop[0])) > self.fracDiscovered
+        k = rand(len(pop), len(pop[0])) > self.fracMutation
 
         #Bias the discovery to the worst fitness solutions
         childn1 = cp.copy(permutation(pop))
