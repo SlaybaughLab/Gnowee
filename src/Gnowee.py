@@ -129,22 +129,23 @@ def main(gh):
             children.append(tmp+(d*(gh.iID+gh.dID)+c*gh.cID+x*gh.xID))
 
         (pop, changes, timeline) = gh.population_update(pop, children,
-                                                      timeline=timeline,
-                                                      adoptedParents=ind,
-                                                      mhFrac=0.2)
+                                                        timeline=timeline,
+                                                        adoptedParents=ind,
+                                                        mhFrac=0.2,
+                                                        randomParents=True)
 
         # Crossover
         if sum(gh.cID + gh.iID + gh.dID) >= 1:
             (children, ind) = gh.crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                     timeline=timeline)
+                                                            timeline=timeline)
 
         # Scatter Search
         if sum(gh.cID + gh.iID + gh.dID) >= 1:
             (children, ind) = gh.scatter_search([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                     timeline=timeline,
-                                                     adoptedParents=ind)
+                                                            timeline=timeline,
+                                                            adoptedParents=ind)
 
         # Mutation
         if sum(gh.cID + gh.iID + gh.dID) >= 1:
@@ -153,8 +154,9 @@ def main(gh):
                                                     timeline=timeline)
 
         # Inversion Crossover
-        if sum(gh.cID + gh.iID + gh.dID + gh.xID) >= 1:
-            (children, ind) = gh.inversion_crossover([p.variables for p in pop])
+        if sum(gh.dID + gh.xID) >= 1:
+            (children, ind) = gh.inversion_crossover(
+                                                    [p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                             timeline=timeline,
                                                             adoptedParents=ind)
@@ -163,8 +165,8 @@ def main(gh):
         if sum(gh.xID) >= 1:
             (children, ind) = gh.two_opt([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    timeline=timeline,
-                                                     adoptedParents=ind)
+                                                            timeline=timeline,
+                                                            adoptedParents=ind)
 
         # Test generational and function evaluation convergence
         if timeline[-1].evaluations > gh.stallLimit:
