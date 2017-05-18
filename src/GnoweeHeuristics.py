@@ -428,13 +428,7 @@ class GnoweeHeuristics(ProblemParameters):
             for j in range(0, len(tmp)-1):
                 flight = (tmp[j]+int(step[i][j]*len(tmp)))%(len(tmp)-1)
                 if tmp[j+1] != flight:
-                    try:
-                        ind = np.where(tmp == flight)[0][0]
-                    except IndexError:
-                        print len(tmp), tmp
-                        print len(set(tmp)), set(tmp)
-                        print flight
-                        exit()
+                    ind = np.where(tmp == flight)[0][0]
                     if ind > j:
                         tmp[j+1:ind+1] = reversed(tmp[j+1:ind+1])
                     if j > ind:
@@ -517,7 +511,7 @@ class GnoweeHeuristics(ProblemParameters):
 
         return children, used
 
-    def elite_crossover(self, pop):
+    def inversion_crossover(self, pop):
         """!
         Generate new designs by using inver-over on combinatorial variables.
         Adapted from ideas in Tao, "Iver-over Operator for the TSP."
@@ -557,13 +551,14 @@ class GnoweeHeuristics(ProblemParameters):
             # Randomly choose crossover point and break some ankles
             if sum(self.cID+self.dID+self.iID) != 0:
                 c = int(rand()*len(nonComb1))
-                tmpNonComb.append(np.array(nonComb1[0:c+1].tolist() \
+                if rand() > 0.5:
+                    tmpNonComb.append(np.array(nonComb1[0:c+1].tolist() \
                                            +nonComb2[c+1:].tolist()))
-                tmpNonComb.append(np.array(nonComb2[0:c+1].tolist()\
+                else:
+                    tmpNonComb.append(np.array(nonComb2[0:c+1].tolist()\
                                            +nonComb1[c+1:].tolist()))
                 # Track parents from whence ye came
                 used.append(i)
-                used.append(r)
 
             # Combinatorial crossover
             if sum(self.xID) != 0:
@@ -681,7 +676,7 @@ class GnoweeHeuristics(ProblemParameters):
 
         children = []
 
-        #Discover (1-fd); K is a status vector to see if discovered
+        # Mutate; K is a status vector to see if mutation occurs
         k = rand(len(pop), len(pop[0])) > self.fracMutation
 
         #Bias the discovery to the worst fitness solutions

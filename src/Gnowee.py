@@ -152,12 +152,12 @@ def main(gh):
             (pop, changes, timeline) = gh.population_update(pop, children,
                                                     timeline=timeline)
 
-        # Elite Crossover
+        # Inversion Crossover
         if sum(gh.cID + gh.iID + gh.dID + gh.xID) >= 1:
-            (children, ind) = gh.elite_crossover([p.variables for p in pop])
+            (children, ind) = gh.inversion_crossover([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    timeline=timeline,
-                                                     adoptedParents=ind)
+                                                            timeline=timeline,
+                                                            adoptedParents=ind)
 
         # 2-Opt
         if sum(gh.xID) >= 1:
