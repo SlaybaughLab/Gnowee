@@ -33,7 +33,7 @@ from GnoweeHeuristics import GnoweeHeuristics
 from TSP import TSP
 
 #------------------------------------------------------------------------------#
-def hyper_opt(tspOn, param, paramList):
+def hyper_opt(tspOn, param, paramList, numIter=25):
     """!
     Performs a hyper optimization on the Gnowee control paramenters for both
     TSP and standard mixed integer, condinuous, and discrete problems.
@@ -47,6 +47,8 @@ def hyper_opt(tspOn, param, paramList):
         An attribute name of the GnoweeHeuristics object to be optimized. \n
     @param paramList: \e list \n 
         List of the parameters to be considered in the optimization. \n
+    @param numIter: \e integer \n 
+        The number of iterations to perform for each parameter. \n
    
     @return <em> numpy array: </em> Returns the results of the hyper-
         optimization. \n
@@ -57,7 +59,7 @@ def hyper_opt(tspOn, param, paramList):
     # Build list of optimization problem types 
     if tspOn == False:
         optFunct = ['welded_beam', 'pressure_vessel', 'speed_reducer', 'spring',
-                  'mi_spring', 'mi_pressure_vessel', 'mi_chemcial_process',
+                  'mi_spring', 'mi_pressure_vessel', 'mi_chemical_process',
                   'ackley', 'dejong', 'easom', 'griewank', 'rastrigin',
                   'rosenbrock']
         numProb = len(optFunct)
@@ -154,11 +156,11 @@ def hyper_opt(tspOn, param, paramList):
     print repr(results)
 
     #Plot the results
-    if tspOn != False:
+    if tspOn == False:
         label = ['\\textbf{Welded Beam}', '\\textbf{Pressure Vessel}',
                  '\\textbf{Speed Reducer}', '\\textbf{Spring}',
-                 '\\textbf{mi_spring}', '\\textbf{mi_pressure_vessel}',
-                 '\\textbf{mi_chemcial_process}']
+                 '\\textbf{MI Spring}', '\\textbf{MI Pressure Vessel}',
+                 '\\textbf{MI Chemical Process}']
         title = '\\textbf{Hyper-Optimization of Gnowee Algorithm for %s}' %param
         op.plot_optimization(results[0:len(label)], label, title)
         label2 = ['\\textbf{Ackley}', '\\textbf{De Jong}', '\\textbf{Easom}',

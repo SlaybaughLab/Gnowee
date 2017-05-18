@@ -1,18 +1,22 @@
-function z = spring_fun(x)
-    z=(2+x(3))*x(1)^2*x(2);
+function z = mi_chemical_process(x)
+    z=(x(4)-1)^2 + (x(5)-2)^2 + (x(6)-1)^2 - log(x(7)+1) + (x(1)-1)^2 + (x(2)-2)^2 + (x(3)-3)^2;
     z=z+getnonlinear(x);
 
-function Z=getnonlinear(u)
+function Z=getnonlinear(x)
     Z=0;
     % Penalty constant
-    lam=10^20;
-
+    lam=10^15;
+    
     % Inequality constraints
-    g(1)=1-u(2)^3*u(3)/(71785*u(1)^4);
-    gtmp=(4*u(2)^2-u(1)*u(2))/(12566*(u(2)*u(1)^3-u(1)^4));
-    g(2)=gtmp+1/(5108*u(1)^2)-1;
-    g(3)=1-140.45*u(1)/(u(2)^2*u(3));
-    g(4)=(u(1)+u(2))/1.5-1;
+    g(1)=x(1)+x(2)+x(3)+x(4)+x(5)+x(6)-5;
+    g(2)=x(1)^2+x(2)^2+x(3)^2+x(6)^2-5.5;
+    g(3)=x(1)+x(4)-1.2;
+    g(4)=x(2)+x(5)-1.8;
+    g(5)=x(3)+x(6)-2.5;
+    g(6)=x(1)+x(7)-1.2;
+    g(7)=x(2)^2+x(5)^2-1.64;
+    g(8)=x(3)^2+x(6)^2-4.25;
+    g(9)=x(3)^2+x(5)^2-4.64;
 
     % No equality constraint in this problem, so empty;
     geq=[];
@@ -33,11 +37,4 @@ function H=getH(g)
         H=0;
     else
         H=1;
-end
-% Index function for equalities
-function H=getHeq(geq)
-    if geq==0,
-       H=0;
-    else
-       H=1;
-end
+    end

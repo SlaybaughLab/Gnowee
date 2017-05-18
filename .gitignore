@@ -11,7 +11,6 @@ docs/latex
 ## Other Files
 *.bmp
 *.jpg
-*.png
 *.pyc
 *.fig
 *.$$$
