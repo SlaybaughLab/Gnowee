@@ -24,7 +24,8 @@ included in the src directory.
 \sa Constraints
 \sa OptiPlot
 \sa Sampling
+\sa ExampleFunction
 """
 
 __all__ = ["Gnowee", "Gnoweeheuristics", "GnoweeUtilities", "Constraints",
-           "ObjectiveFunction", "OptiPlot", "Sampling"]
+           "ObjectiveFunction", "OptiPlot", "Sampling", "ExampleFunction"]

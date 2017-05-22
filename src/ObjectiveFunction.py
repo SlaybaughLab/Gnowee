@@ -52,8 +52,8 @@ class ObjectiveFunction(object):
         ## @var _FUNC_DICT
         # <em> dictionary of function handles: </em> Stores
         # the mapping between the string names and function handles for
-        # the objective function evaluations in the class.  This must be
-        # updated by the user if a function is added to the class.
+        # the objective function evaluations in the class.  This is a 
+        # legacy private variable that is only used for error reporting.
         self._FUNC_DICT = {'spring': self.spring,
                            'mi_spring': self.mi_spring,
                            'welded_beam': self.welded_beam,
@@ -121,19 +121,25 @@ class ObjectiveFunction(object):
         @param funcName \e string \n
              A string identifying the objective function to be used. \n
         """
-        try:
-            self.func = self._FUNC_DICT[funcName]
-            assert hasattr(self.func, '__call__'), 'Invalid function handle'
-        except KeyError:
-            print ('ERROR: The function specified does not exist in the '
-                   'ObjectiveFunction class or the _FUNC_DICT. Allowable '
-                   'methods are {}'.format(self._FUNC_DICT))
+        if hasattr(funcName, '__call__'):
+            self.func = funcName
+        else:
+            try:
+                self.func = getattr(self, funcName)
+                assert hasattr(self.func, '__call__'), 'Invalid function handle'
+            except KeyError:
+                print ('ERROR: The function specified does not exist in the '
+                       'ObjectiveFunction class or the _FUNC_DICT. Allowable '
+                       'methods are {}'.format(self._FUNC_DICT))
 
 #-----------------------------------------------------------------------------#
 # The following sections are user modifiable to all for the use of new
 # objective functions that have not yet been implemented.  The same format must
-# be followed to work with the standard Coeus call. If a function is added.
-# it must also be added to the _FUNC_DICT attribute of the class.
+# be followed to work with the standard Coeus call.
+#
+# Alternatively, the user can specify additional functions in their own files.
+# Examples of both are shown in the runGnowee ipython notebook in the /src
+# directory.
 #-----------------------------------------------------------------------------#
     def spring(self, u):
         """!
