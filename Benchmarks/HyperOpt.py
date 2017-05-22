@@ -14,7 +14,7 @@ TSPHyperOpt notebooks included in the Benchmarks directory.
 
 @author James Bevins
 
-@date 16May17
+@date 19May17
 """
 
 import sys
@@ -25,8 +25,11 @@ import Gnowee
 import numpy as np
 import OptiPlot as op
 import math as m
+import copy as cp
 
 from operator import attrgetter
+from collections import Counter
+from scipy.stats import rankdata
 from ObjectiveFunction import ObjectiveFunction
 from GnoweeUtilities import ProblemParameters, Event
 from GnoweeHeuristics import GnoweeHeuristics
@@ -77,7 +80,7 @@ def hyper_opt(tspOn, param, paramList, numIter=25):
         dimension = [0, 0, 0, 0, 0]
 
     # Initialize variables
-    maxIter = 25  #Number of algorithm iterations
+    maxIter = numIter  #Number of algorithm iterations
     results = np.zeros((numProb, len(paramList), 3))
 
     for i in range(0, numProb, 1):
@@ -153,7 +156,23 @@ def hyper_opt(tspOn, param, paramList, numIter=25):
                                           /averages.evaluations)**2)\
                                         *results[1,j,1]
 
+    # Output the results and some statistics 
     print repr(results)
+    print ("Variable   Weighted Relative Sum (Low is Better)  "
+           "Sum of Ordinal Rank   Number of Minimums")
+    print ("==================================================="
+          "=======================================")
+    weighted = cp.copy(results)
+    for i in range(0,len(results[0])):
+        minLoc = []
+        ranks = []
+        for j in range(0,len(results)):
+            weighted[j,:,1]=results[j,:,1]/min(results[j,:,1])
+            minLoc.append(np.argmin(results[j,:,1]))
+            ranks.append(rankdata(results[j,:,1], method='ordinal'))
+        print ("{}                  {}                          "
+               "{}                  {}".format(paramList[i], sum(weighted[:,i,1]),
+                                               sum(np.asarray(ranks)[:,i]), Counter(minLoc)[i]))
 
     #Plot the results
     if tspOn == False:

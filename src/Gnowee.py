@@ -16,7 +16,7 @@ included in the src directory.
 
 @author James Bevins
 
-@date 16May17
+@date 18May17
 """
 
 import time
@@ -69,7 +69,6 @@ def main(gh):
         gh.population = len(pop)
 
     # Set initial heuristic probabilities
-    fm = gh.fracMutation
     fe = gh.fracElite
     fl = gh.fracLevy
 
@@ -77,17 +76,17 @@ def main(gh):
     converge = False
     while converge == False:
 
-        # Sample generational heuristic probabilities
-        gh.fracMutation = rand()*fm
-        gh.fracElite = rand()*fe
-        gh.fracLevy = rand()*fl
+        # Sample generational heuristic probabilities if MI problem
+        if sum(gh.iID)+sum(gh.dID) >= 1:
+            gh.fracElite = rand()*fe
+            gh.fracLevy = rand()*fl
 
         # 3-Opt
         if sum(gh.xID) >= 1:
             (children, ind) = gh.three_opt([p.variables for p in pop])
             (pop, changes, timeline) = gh.population_update(pop, children,
-                                                    timeline=timeline,
-                                                     adoptedParents=ind)
+                                                            timeline=timeline,
+                                                            adoptedParents=ind)
 
         # Levy flights
         if sum(gh.iID)+sum(gh.dID) >= 1:
@@ -175,10 +174,10 @@ def main(gh):
                 converge = True
                 print "Stall at evaluation #{}".format(
                     timeline[-1].evaluations)
-        elif timeline[-1].generation > gh.maxGens:
+        if timeline[-1].generation > gh.maxGens:
             converge = True
             print "Max generations reached."
-        elif timeline[-1].evaluations > gh.maxFevals:
+        if timeline[-1].evaluations > gh.maxFevals:
             converge = True
             print "Max function evaluations reached."
 

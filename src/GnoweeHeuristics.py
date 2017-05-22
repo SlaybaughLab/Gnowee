@@ -18,7 +18,7 @@ interest based on the fitness landscape and type of variables.
 
 @author James Bevins
 
-@date 16May17
+@date 18May17
 """
 
 import numpy as np
@@ -39,7 +39,7 @@ class GnoweeHeuristics(ProblemParameters):
 
     ##
     def __init__(self, population=25, initSampling='lhc', fracMutation=0.2,
-                 fracElite=0.2, fracLevy=0.2, alpha=1.5, gamma=1, n=1,
+                 fracElite=0.2, fracLevy=1.0, alpha=0.5, gamma=1, n=1,
                  scalingFactor=10.0, penalty=0.0, maxGens=20000,
                  maxFevals=200000, convTol=1e-6, stallLimit=10000,
                  optConvTol=1e-2, **kwargs):
@@ -677,7 +677,7 @@ class GnoweeHeuristics(ProblemParameters):
         children = []
 
         # Mutate; K is a status vector to see if mutation occurs
-        k = rand(len(pop), len(pop[0])) > self.fracMutation
+        k = rand(len(pop), len(pop[0])) > self.fracMutation*rand()
 
         #Bias the discovery to the worst fitness solutions
         childn1 = cp.copy(permutation(pop))
