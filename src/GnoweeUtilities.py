@@ -8,7 +8,7 @@
 
 @author James Bevins
 
-@date 15May17
+@date 18May17
 """
 
 import numpy as np
@@ -572,7 +572,7 @@ class ProblemParameters(object):
                                   Constraint('pressure_vessel', 0.0),
                                   [0.0625, 0.0625, 10.0, 1E-8],
                                   [1.25, 99*0.0625, 50.0, 200.0],
-                                  ['c', 'c', 'c', 'c'], [], 6059.714335,
+                                  ['c', 'c', 'c', 'c'], [], 5885.332800,
                                   ('\\textbf{Pressure Vessel Optimization '
                                    'using %s}' %algorithm),
                                   ('\\textbf{Function Evaluations for '
@@ -582,31 +582,23 @@ class ProblemParameters(object):
                                    '\\textbf{Head Thickness}',
                                    '\\textbf{Inner Radius}',
                                    '\\textbf{Cylinder Length}'])
+                break
             if case('mi_pressure_vessel'):
                 ProblemParameters.__init__(self,
                                   ObjectiveFunction('mi_pressure_vessel'),
                                   Constraint('mi_pressure_vessel', 0.0),
-                                  [25.0, 25.0], [210.0, 240.0],
-                                  ['c', 'c', 'd', 'd'],
-                                  [[0.0625, 0.125, 0.182, 0.25,
-                                    0.3125, 0.375, 0.4375, 0.5, 0.5625, 0.625,
-                                    0.6875, 0.75, 0.7125, 0.875, 0.9375, 1,
-                                    1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375,
-                                    1.4375, 1.5, 1.5625, 1.625, 1.6875, 1.75,
-                                    1.8125, 1.875, 1.9375, 2], [0.0625, 0.125,
-                                    0.182, 0.25, 0.3125, 0.375, 0.4375, 0.5,
-                                    0.5625, 0.625, 0.6875, 0.75, 0.7125, 0.875,
-                                    0.9375, 1, 1.0625, 1.125, 1.1875, 1.25,
-                                    1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.625,
-                                    1.6875, 1.75, 1.8125, 1.875, 1.9375, 2]],
-                                  5882.70862818,
+                                  [10.0, 1E-8], [50.0, 200.0],
+                                  ['c', 'c', 'd', 'd'], 
+                                  [(np.asarray(range(99))*0.0625+0.0625).tolist(),
+                                   (np.asarray(range(99))*0.0625+0.0625).tolist()],
+                                  6059.714335,
                                   ('\\textbf{MI Pressure Vessel Optimization '
                                    'using %s}' %algorithm),
-                                  ('\\textbf{Function Evaluations for Pressure'
-                                   ' Vessel Optimization using %s}'
+                                  ('\\textbf{Function Evaluations for '
+                                   'MI Pressure Vessel Optimization using %s}'
                                     %algorithm),
-                                  ['\\textbf{Fitness}', '\\textbf{Radius}',
-                                   '\\textbf{Lenght}',
+                                  ['\\textbf{Fitness}', '\\textbf{Inner Radius}',
+                                   '\\textbf{Cylinder Length}',
                                    '\\textbf{Shell Thickness}',
                                    '\\textbf{Head Thickness}'])
                 break
@@ -656,10 +648,10 @@ class ProblemParameters(object):
                                    'using %s}' %algorithm),
                                   ('\\textbf{Function Evaluations for Chemical '
                                    'Process Optimization using %s}' %algorithm),
-                                  ['\\textbf{x1}', '\\textbf{x2}',
-                                   '\\textbf{x3}', '\\textbf{y1}',
-                                   '\\textbf{y2}', '\\textbf{y3}',
-                                   '\\textbf{y4}'])
+                                  ['\\textbf{Fitness}', '\\textbf{x1}',
+                                   '\\textbf{x2}', '\\textbf{x3}',
+                                   '\\textbf{y1}', '\\textbf{y2}',
+                                   '\\textbf{y3}', '\\textbf{y4}'])
                 break
             if case('dejong'):
                 ProblemParameters.__init__(self, ObjectiveFunction('dejong'),
@@ -721,8 +713,8 @@ class ProblemParameters(object):
                                   ('\\textbf{Function Evaluations for Easom '
                                    'Function Optimization using %s}'
                                    %algorithm),
-                                  ['\\textbf{Fitness}'] \
-                                   + ['\\textbf{x}', '\\textbf{y}'])
+                                  ['\\textbf{Fitness}', '\\textbf{x}',
+                                   '\\textbf{y}'])
                 break
             if case('shifted_easom'):
                 ProblemParameters.__init__(self,
@@ -734,8 +726,8 @@ class ProblemParameters(object):
                                   ('\\textbf{Function Evaluations for Shifted '
                                    'Easom Function Optimization using %s}'
                                    %algorithm),
-                                  ['\\textbf{Fitness}'] \
-                                   + ['\\textbf{x}', '\\textbf{y}'])
+                                  ['\\textbf{Fitness}', '\\textbf{x}',
+                                   '\\textbf{y}'])
                 break
             if case('griewank'):
                 ProblemParameters.__init__(self,

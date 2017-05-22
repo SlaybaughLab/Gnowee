@@ -139,9 +139,12 @@ class ObjectiveFunction(object):
         """!
         Spring objective function.
 
-        Optimal Example: \n
+        Nearly optimal Example: \n
         u = [0.05169046, 0.356750, 11.287126] \n
         fitness = 0.0126653101469
+
+        Taken from: "Solving Engineering Optimization Problems with the
+        Simple Constrained Particle Swarm Optimizer"
 
         @param self: <em> pointer </em> \n
             The ObjectiveFunction pointer. \n
@@ -212,7 +215,7 @@ class ObjectiveFunction(object):
         """!
         Welded Beam objective function.
 
-        Optimal Example: \n
+        Nearly optimal Example: \n
         u = [0.20572965, 3.47048857, 9.0366249, 0.20572965] \n
         fitness = 1.7248525603892848
 
@@ -254,14 +257,9 @@ class ObjectiveFunction(object):
         """!
         Pressure vessel objective function.
 
-        Near Optimal Example: \n
-        u = [0.81250000001, 0.4375, 42.098445595854923, 176.6365958424394] \n
-        fitness = 6059.714335
-
-        Optimal obtained using Gnowee: \n
-        u = [0.7781686880924992, 0.3846491857203429, 40.319621144688995,
-             199.99996630362293] \n
-        fitness = 5885.33285347
+        Nearly optimal obtained using Gnowee: \n
+        u = [0.778169, 0.384649, 40.319619, 199.999998] \n
+        fitness = 5885.332800
 
         Taken from: "Solving Engineering Optimization Problems with the
         Simple Constrained Particle Swarm Optimizer"
@@ -290,7 +288,7 @@ class ObjectiveFunction(object):
         """!
         Mixed Integer Pressure vessel objective function.
 
-        Near optimal example: \n
+        Nearly optimal example: \n
         u = [58.2298, 44.0291, 17, 9] \n
         fitness = 7203.24
 
@@ -328,13 +326,9 @@ class ObjectiveFunction(object):
         """!
         Speed reducer objective function.
 
-        Optimal example: \n
+        Nearly optimal example: \n
         u = [58.2298, 44.0291, 17, 9] \n
         fitness = 2996.34784914
-
-        Optimal example obtained with Gnowee: \n
-        u = [3.500000, 0.7, 17, 7.300000, 7.800000, 3.350214, 5.286683] \n
-        fitness = 5855.893191
 
         Taken from: "Solving Engineering Optimization Problems with the
         Simple Constrained Particle Swarm Optimizer"
