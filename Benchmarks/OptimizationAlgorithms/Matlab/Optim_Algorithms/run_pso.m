@@ -7,12 +7,11 @@ clear all
 %    lb = ([0.1 0.1 1E-8 1E-8]);
 %    ub = ([10.0 10.0 10.0 2.0]);
 % 
-% fun = @pressurevessel_fun;
-%    nvars = 4;
-%    optim=6059.714335;
-%    optim=5885.33285347;
-%    lb = ([0.0625 0.0625 10.0 1E-8]);
-%    ub = ([1.25 99*0.0625 50.0 200.0]);
+fun = @pressurevessel_fun;
+   nvars = 4;
+   optim=5885.3328;
+   lb = ([0.0625 0.0625 10.0 1E-8]);
+   ub = ([99*0.0625 99*0.0625 50.0 200.0]);
 %    
 % fun = @speedreducer_fun;
 %    nvars = 7;
@@ -26,11 +25,11 @@ clear all
 %    lb = ([0.05 0.25 2.0]);
 %    ub = ([2.0 1.3 15.0]);   
 %       
-fun = @ackley_fun;
-   nvars = 3;
-   optim=0.0;
-   lb = ([-25.0 -25.0 -25.0]);
-   ub = ([25.0 25.0 25.0]);
+% fun = @ackley_fun;
+%    nvars = 3;
+%    optim=0.0;
+%    lb = ([-25.0 -25.0 -25.0]);
+%    ub = ([25.0 25.0 25.0]);
 %    
 % fun = @dejong_fun;
 %    nvars = 4;
@@ -80,11 +79,11 @@ fun = @ackley_fun;
    end
    
    % Set PSO Options and outputs   
-%    options = optimoptions('particleswarm','OutputFcns',@pswplotranges,'SwarmSize',100,'MaxIter',2000, ...
-%                           'StallIterLimit',100,'TolFun',1E-6,'ObjectiveLimit',opLim);
+   options = optimoptions('particleswarm','OutputFcns',@pswplotranges,'SwarmSize',100,'MaxIter',2000, ...
+                          'StallIterLimit',100,'TolFun',1E-6,'ObjectiveLimit',opLim);
 
-   options = optimoptions('particleswarm','OutputFcns',@pswplotranges,'SwarmSize',100,'MaxIter',100, ...
-                          'StallIterLimit',100,'TolFun',1E-16);
+%    options = optimoptions('particleswarm','OutputFcns',@pswplotranges,'SwarmSize',100,'MaxIter',100, ...
+%                           'StallIterLimit',100,'TolFun',1E-16);
    
    % Run PSO n times
    for i=1:n

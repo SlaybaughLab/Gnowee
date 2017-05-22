@@ -181,7 +181,6 @@ def PressureVessel_Obj(u,penalty=1E15):
     """
     Pressure vessel objective function with constraints for penalty method
     Taken from: "Solving Engineering Optimization Problems with the Simple Constrained Particle Swarm Optimizer"
-    Near Optimal Example: u=[0.81250000001, 0.4375,42.098445595854923, 176.6365958424394] w/ fitness=6059.714335 
     Optimal obtained using CS: u=[0.7781686880924992, 0.3846491857203429, 40.319621144688995, 199.99996630362293]
        w/ fitness=5885.33285347
    
@@ -1047,12 +1046,13 @@ def Get_Params(funct,opt,dimension=0,debug=False):
                               '\\textbf{Function Evaluations for Spring Optimization using %s}' %opt, varType=['c','c','c'])
             break
         if case(PressureVessel_Obj):
-            params=Parameters(np.array([0.0625, 0.0625, 10.0, 1E-8]),np.array([1.25, 99*0.0625, 50.0, 200.0]), \
-                              6059.714335, ['\\textbf{Fitness}','\\textbf{Thickness}','\\textbf{Head Thickness}', \
+            params=Parameters(np.array([0.0625, 0.0625, 10.0, 1E-8]),np.array([99*0.0625, 99*0.0625, 50.0, 200.0]), \
+                              5885.332800, ['\\textbf{Fitness}','\\textbf{Thickness}','\\textbf{Head Thickness}', \
                                                   '\\textbf{Inner Radius}','\\textbf{Cylinder Length}'], \
                               '\\textbf{Pressure Vessel Optimization using %s}' %opt, \
                               '\\textbf{Function Evaluations for Pressure Vessel Optimization using %s}' %opt, \
                               varType=['c','c','c','c'])
+            break
         if case(MI_PressureVessel_Obj): 
             params=Parameters([25.0, 25.0],[210.0, 240.0],5855.893191, \
                               ['\\textbf{Fitness}','\\textbf{Radius}','\\textbf{Lenght}','\\textbf{Shell Thickness}',\

@@ -1,25 +1,33 @@
 clc
 clear all
 
-% fun = @minlp_pressurevessel_fun;
-%    nvars = 4;
-%    optim=6059.714335;
-%    lb = ([1 1 10.0 1E-8]);
-%    ub = ([20 99 50.0 200.0]);
-%    intVar=[1,2];
+fun = @mi_pressure_vessel;
+   nvars = 4;
+   optim=6059.714335;
+   lb = ([10.0 1E-8 1 1]);
+   ub = ([50.0 200.0 99 99 ]);
+   intVar=[3,4];
 
-fun = @minlp_spring_fun;
-   nvars = 3;
-   optim=2.65856;
-   lb = ([0.0 1 1]);
-   ub = ([3.0 10 42]);   
-   intVar=[1,3];
+% fun = @mi_spring;
+%    nvars = 3;
+%    optim=2.65856;
+%    lb = ([0.0 1 1]);
+%    ub = ([3.0 10 42]);   
+%    intVar=[2,3];
+% 
+%  fun = @mi_chemical_process;
+%     nvars=7;
+%     optim=4.579582;
+% 	% [x1,x2,x3,y1,y2,y3,y4]
+% 	lb=([0,0,0,0,0,0,0]);
+% 	ub=([10.0,10.0,10.0,1,1,1,1]);
+%     intVar=[4,5,6,7];
 
    
    %rng default; 
    
    % Initialize Variables
-   n=1;   %number of iterations
+   n=100;   %number of iterations
    design=[[]];
    fitness=[];
    feval=[];
@@ -34,11 +42,11 @@ fun = @minlp_spring_fun;
    end
    
    % Set GA Options and outputs   
-   options = gaoptimset('PopulationSize',50,'Generations',4000, ...
-                          'StallGenLimit',200,'TolFun',1E-6,'TolCon',1E-6,'FitnessLimit',opLim);
-%    options = gaoptimset('MutationFcn',@mutationadaptfeasible,'PopulationSize',50,'Generations',200, ...
-%                           'StallGenLimit',200,'TolFun',1E-12,'TolCon',1E-12,'PlotFcns',@gaplotbestf);
-   %'PlotFcns':@gaplotstopping,@gaplotexpectation,@gaplotscorediversity,@gaplotbestindiv
+%    options = gaoptimset('PopulationSize',50,'Generations',4000, ...
+%                           'StallGenLimit',200,'TolFun',1E-6,'TolCon',1E-6,'FitnessLimit',opLim);
+   options = gaoptimset('PopulationSize',50,'Generations',200, ...
+                          'StallGenLimit',200,'TolFun',1E-12,'TolCon',1E-12);
+   %'PlotFcns':@gaplotstopping,@gaplotexpectation,@gaplotscorediversity,@gaplotbestindiv,@gaplotbestf
    
    % Run GA n times
    for i=1:n

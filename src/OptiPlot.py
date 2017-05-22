@@ -229,7 +229,7 @@ def plot_feval_hist(data=[], listData=[], label=[]):
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Label and markers
-    marker = ['ko-', 'k^-', 'k+-', 'ks-', 'kd-', 'k*-']
+    marker = ['ko-', 'k^-', 'k+-', 'ks-', 'kd-', 'k*-', 'k>-']
     if label == []:
         label = ['\\textbf{GA}', '\\textbf{SA}', '\\textbf{PSO}',
                  '\\textbf{CS}', '\\textbf{MCS}', '\\textbf{DMC}']
