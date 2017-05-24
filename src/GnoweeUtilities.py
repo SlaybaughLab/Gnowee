@@ -8,7 +8,11 @@
 
 @author James Bevins
 
-@date 18May17
+@date 23May17
+
+@copyright <a href='../../licensing/COPYRIGHT'>&copy; 2017 UC
+            Berkeley Copyright and Disclaimer Notice</a>
+@license <a href='../../licensing/LICENSE'>GNU GPLv3.0+ </a>
 """
 
 import numpy as np
@@ -513,7 +517,7 @@ class ProblemParameters(object):
             tmpVar = cp.copy(variables)
         return np.array(tmpVar)
 
-    def set_preset_params(self, funct, algorithm='', dimension=2):
+    def set_preset_params(self, funct, algorithm='Gnowee', dimension=2):
         """!
         Instantiates a ProblemParameters object and populations member
         variables from a set of predefined problem types.
@@ -588,16 +592,19 @@ class ProblemParameters(object):
                                   ObjectiveFunction('mi_pressure_vessel'),
                                   Constraint('mi_pressure_vessel', 0.0),
                                   [10.0, 1E-8], [50.0, 200.0],
-                                  ['c', 'c', 'd', 'd'], 
-                                  [(np.asarray(range(99))*0.0625+0.0625).tolist(),
-                                   (np.asarray(range(99))*0.0625+0.0625).tolist()],
+                                  ['c', 'c', 'd', 'd'],
+                                  [(np.asarray(range(99))*0.0625+0.0625)\
+                                                                     .tolist(),
+                                   (np.asarray(range(99))*0.0625+0.0625)\
+                                                                     .tolist()],
                                   6059.714335,
                                   ('\\textbf{MI Pressure Vessel Optimization '
                                    'using %s}' %algorithm),
                                   ('\\textbf{Function Evaluations for '
                                    'MI Pressure Vessel Optimization using %s}'
                                     %algorithm),
-                                  ['\\textbf{Fitness}', '\\textbf{Inner Radius}',
+                                  ['\\textbf{Fitness}',
+                                   '\\textbf{Inner Radius}',
                                    '\\textbf{Cylinder Length}',
                                    '\\textbf{Shell Thickness}',
                                    '\\textbf{Head Thickness}'])
@@ -816,8 +823,8 @@ class ProblemParameters(object):
                                   ['\\textbf{Fitness}'])
                 break
             if case():
-                print ('ERROR: Fishing in the deep end you are. Define your own '
-                       'parameter set you must.')
+                print ('ERROR: Fishing in the deep end you are. Define your '
+                       'own parameter set you must.')
 
 #------------------------------------------------------------------------------#
 class Switch(object):

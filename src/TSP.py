@@ -13,7 +13,11 @@ for use in optimization routines.
 
 @author James Bevins
 
-@date 15May17
+@date 23May17
+
+@copyright <a href='../../licensing/COPYRIGHT'>&copy; 2017 UC
+            Berkeley Copyright and Disclaimer Notice</a>
+@license <a href='../../licensing/LICENSE'>GNU GPLv3.0+ </a>
 """
 
 import numpy as np
