@@ -1,3 +1,6 @@
+##Specific Files
+licensing/Gnowee_UCB_SW_Discl_Form.pdf
+
 ##Folders
 src/.ipynb_checkpoints/*
 Benchmarks/.ipynb_checkpoints/*
@@ -30,6 +33,7 @@ docs/latex
 *.pyc
 *.fig
 *.$$$
+*.doc
 
 
 

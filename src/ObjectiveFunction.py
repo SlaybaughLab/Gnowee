@@ -15,7 +15,11 @@ format of the functions currently in the class.
 
 @author James Bevins
 
-@date 12May17
+@date 23May17
+
+@copyright <a href='../../licensing/COPYRIGHT'>&copy; 2017 UC
+            Berkeley Copyright and Disclaimer Notice</a>
+@license <a href='../../licensing/LICENSE'>GNU GPLv3.0+ </a>
 """
 
 import numpy as np
@@ -52,7 +56,7 @@ class ObjectiveFunction(object):
         ## @var _FUNC_DICT
         # <em> dictionary of function handles: </em> Stores
         # the mapping between the string names and function handles for
-        # the objective function evaluations in the class.  This is a 
+        # the objective function evaluations in the class.  This is a
         # legacy private variable that is only used for error reporting.
         self._FUNC_DICT = {'spring': self.spring,
                            'mi_spring': self.mi_spring,

@@ -6,9 +6,13 @@
 
 @brief Defines a class to perform constraint calculations.
 
-@author James Bevins,
+@author James Bevins
 
-@date 12May17
+@date 23May17
+
+@copyright <a href='../../licensing/COPYRIGHT'>&copy; 2017 UC
+            Berkeley Copyright and Disclaimer Notice</a>
+@license <a href='../../licensing/LICENSE'>GNU GPLv3.0+ </a>
 """
 
 import numpy as np
@@ -41,7 +45,7 @@ class Constraint(object):
         ## @var _FUNC_DICT
         # <em> dictionary of function handles: </em> Stores
         # the mapping between the string names and function handles for
-        # the constraint function evaluations in the class.  This is a 
+        # the constraint function evaluations in the class.  This is a
         # legacy private variable that is only used for error reporting.
         self._FUNC_DICT = {'less_or_equal': self.less_or_equal,
                            'less_than': self.less_than,
@@ -135,7 +139,7 @@ class Constraint(object):
 #-----------------------------------------------------------------------------#
 # The following sections are user modifiable to all for the use of new
 # objective functions that have not yet been implemented.  The same format must
-# be followed to work with the standard Coeus call. 
+# be followed to work with the standard Coeus call.
 #
 # Alternatively, the user can specify additional functions in their own files.
 # Examples of both are shown in the runGnowee ipython notebook in the /src

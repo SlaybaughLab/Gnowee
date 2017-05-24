@@ -18,7 +18,11 @@ interest based on the fitness landscape and type of variables.
 
 @author James Bevins
 
-@date 18May17
+@date 23May17
+
+@copyright <a href='../../licensing/COPYRIGHT'>&copy; 2017 UC
+            Berkeley Copyright and Disclaimer Notice</a>
+@license <a href='../../licensing/LICENSE'>GNU GPLv3.0+ </a>
 """
 
 import numpy as np
@@ -54,8 +58,8 @@ class GnoweeHeuristics(ProblemParameters):
 
         The default settings are found to be optimized for a wide range of
         problems, but can be changed to optimize performance for a particular
-        problem type or class.  For more details, refer to the benchmark code
-        in the development branch of the repo or <insert link to paper>.
+        problem type or class.  For more details, refer to the
+        <a href='../docs/IEEE_Gnowee.pdf'>development paper</a>.
 
         @param self: <em> GnoweeHeuristic pointer </em> \n
             The GnoweeHeuristics pointer. \n
@@ -530,7 +534,7 @@ class GnoweeHeuristics(ProblemParameters):
             design variables representing the updated design parameters.
         """
 
-        children, tmpComb, tmpNonComb, used = ([] for i in range(4))
+        children, tmpNonComb, used = ([] for i in range(3))
 
         for i in range(0, int(len(pop)*self.fracElite), 1):
             # Randomly choose starting parent #2
@@ -593,10 +597,10 @@ class GnoweeHeuristics(ProblemParameters):
                         children.append(tmp2)
                     elif sum(self.cID+self.dID+self.iID) != 0 \
                           and sum(self.xID) != 0:
-                        children.append(np.concatenate(tmpNonComb[-2],
-                                                       tmpComb1))
                         children.append(np.concatenate(tmpNonComb[-1],
-                                                       tmpComb2))
+                                                       tmp1))
+                        children.append(np.concatenate(tmpNonComb[-1],
+                                                       tmp2))
 
                     # Track parents from whence ye came
                     used.append(i)
@@ -718,20 +722,19 @@ class GnoweeHeuristics(ProblemParameters):
         children, used = ([] for i in range(2))
 
         for i in range(0, int(self.fracElite*len(pop)), 1):
-            for break1 in range(0, int(self.fracElite*len(pop[i])), 1):
-                breaks = np.sort((np.random.rand(2)*len(pop[i])//1))
+            breaks = np.sort((rand(2)*len(pop[i])//1))
+            breaks[1] = int(breaks[0] \
+                            + tlf(1, 1)[0, 0]*len(pop[i]))%len(pop[i])
+            while abs(breaks[0]-breaks[1]) < 2:
                 breaks[1] = int(breaks[0] \
-                                + tlf(1, 1)[0, 0]*len(pop[i]))%len(pop[i])
-                while abs(breaks[0]-breaks[1]) < 2:
-                    breaks[1] = int(breaks[0] \
-                                + tlf(1, 1)[0, 0]*len(pop[i]))%len(pop[i])
-                    np.sort(breaks)
+                            + tlf(1, 1)[0, 0]*len(pop[i]))%len(pop[i])
+                np.sort(breaks)
 
-                # Create the child
-                children.append(pop[i])
-                children[-1][int(breaks[0]):int(breaks[1])] = list(reversed(
-                                      pop[i][int(breaks[0]):int(breaks[1])]))
-                used.append(i)
+            # Create the child
+            children.append(pop[i])
+            children[-1][int(breaks[0]):int(breaks[1])] = list(reversed(
+                                  pop[i][int(breaks[0]):int(breaks[1])]))
+            used.append(i)
 
         return children, used
 
@@ -758,18 +761,18 @@ class GnoweeHeuristics(ProblemParameters):
         # Initialize variables
         children, used = ([] for i in range(2))
 
-        for i in range(0, len(pop), 1):
+        for i in range(0, self.population, 1):
             tmp = []   # Make a local copy of current parent designs
 
             # Generate 3 random nodes
-            breaks = np.sort(np.random.rand(3)*len(pop[i])//1)
+            breaks = np.sort(rand(3)*len(pop[i])//1)
 
             # Ensure that 3 different nodes are selected
             while breaks[1] == breaks[0] or breaks[1] == breaks[2]:
-                breaks[1] = (np.random.rand()*len(pop[i])//1)
+                breaks[1] = (rand()*len(pop[i])//1)
                 breaks = np.sort(breaks)
             while breaks[2] == breaks[0]:
-                breaks[2] = (np.random.rand()*len(pop[i])//1)
+                breaks[2] = (rand()*len(pop[i])//1)
             breaks = np.sort(breaks)
 
             # Make reconnections first way
