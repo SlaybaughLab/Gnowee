@@ -62,4 +62,6 @@ james.e.bevins@gmail.com \n
 ## Acknowledements
 This material is based upon work supported by the National Science Foundation
 Graduate Research Fellowship under Grant No. NSF 11-582.
+
+This material is based upon work supported by the Department of Energy National Nuclear Security Administration through the Nuclear Science and Security Consortium under Award Numbers DE-NA0000979 and DE-NA0003180.
 """
