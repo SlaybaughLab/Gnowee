@@ -229,6 +229,7 @@ def main(gh):
 
         # Update Timeline
         timeline[-1].generation += 1
+        print timeline[-1].fitness, np.sum([p.fitness for p in pop])/gh.population
 
     #Determine execution time
     print "Program execution time was {}.".format(time.time() - startTime)

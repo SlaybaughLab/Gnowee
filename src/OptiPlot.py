@@ -9,7 +9,7 @@ metaheuristic optimization process.
 
 @author James Bevins
 
-@date 23May17
+@date 5Jun17
 
 @copyright <a href='../../licensing/COPYRIGHT'>&copy; 2017 UC
             Berkeley Copyright and Disclaimer Notice</a>
@@ -331,7 +331,7 @@ def plot_tlf(alpha=1.5, gamma=1., numSamp=1E7, cutPoint=10.):
     plt.show()
 
 #------------------------------------------------------------------------------#
-def plot_optimization(data, label, title=''):
+def plot_optimization(data, label, title='', xLabel=''):
     """!
     @ingroup OptiPlot
     Plots the results of optimization process for a given algorithm and
@@ -344,10 +344,14 @@ def plot_optimization(data, label, title=''):
         List of names of the problem types ran. \n
     @param title: \e string \n
         Title for plot. \n
+    @param xLabel: \e string \n
+        Title for x-axis. \n
     """
 
     # Allow use of Tex sybols and set formats
     plt.rc('text', usetex=True)
+    plt.rc('axes', linewidth=1.5)
+    plt.rc('font', weight='bold')
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Markers; currently hard wired
@@ -374,16 +378,21 @@ def plot_optimization(data, label, title=''):
                      fontsize=17, y=1.04)
     else:
         ax.set_title(title, y=1.04)
-    ax.set_ylabel('\\textbf{Performance Metric}', fontsize=15, x=-0.04)
+    ax.set_ylabel('\\textbf{Performance Metric}', fontsize=16, x=-0.04)
     ax.yaxis.set_major_formatter(majorFormatter)
     if all(y) > 0:
         ax.set_yscale('log')
     ax.set_ylim(0.8*np.min(data[:, :, 1]), 1.2*np.max(data[:, :, 1]))
-    ax.set_xlabel('\\textbf{Parameter Value}', fontsize=15, y=-0.04)
+    if xLabel == '':
+        ax.set_xlabel('\\textbf{Parameter Value}', fontsize=16, y=-0.04)
+    else:
+        ax.set_xlabel(xLabel, fontsize=16, y=-0.04)    
     #ax.set_xscale('log')
     ax.set_xlim(x[0], np.max(x))
 
-    plt.yticks(fontsize=14)
-    plt.xticks(fontsize=14)
+    ax.xaxis.set_tick_params(which='major', width=2, labelsize=16, length=5)
+    ax.yaxis.set_tick_params(which='major', width=2, labelsize=16, length=5)
+    ax.xaxis.set_tick_params(which='minor', width=1.5, length=4)
+    ax.yaxis.set_tick_params(which='minor', width=1.5, length=4)
 
     plt.show()
