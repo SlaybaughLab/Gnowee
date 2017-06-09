@@ -46,6 +46,7 @@ def plot_vars(data, lowBounds=[], upBounds=[], title=[], label=[]):
 
     # Allow use of Tex sybols and set formats
     plt.rc('text', usetex=True)
+    plt.rcParams['savefig.dpi'] = 900
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Establish labels for each data set and title for the plot
@@ -126,6 +127,7 @@ def plot_hist(data, title='', xLabel=''):
 
     # Allow use of Tex sybols and set formats
     plt.rc('text', usetex=True)
+    plt.rcParams['savefig.dpi'] = 900
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Establish labels for each data set and title for the plot
@@ -174,6 +176,7 @@ def plot_hist_comp(data, data2, dataLabels, title='', xLabel=''):
 
     # Allow use of Tex sybols and set formats
     plt.rc('text', usetex=True)
+    plt.rcParams['savefig.dpi'] = 900
 
     # Establish labels for each data set and title for the plot
     if xLabel == '':
@@ -230,6 +233,7 @@ def plot_feval_hist(data=[], listData=[], label=[]):
 
     # Allow use of Tex sybols and set formats
     plt.rc('text', usetex=True)
+    plt.rcParams['savefig.dpi'] = 900
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Label and markers
@@ -352,6 +356,7 @@ def plot_optimization(data, label, title='', xLabel=''):
     plt.rc('text', usetex=True)
     plt.rc('axes', linewidth=1.5)
     plt.rc('font', weight='bold')
+    plt.rcParams['savefig.dpi'] = 900
     majorFormatter = FormatStrFormatter('%0.1e')
 
     # Markers; currently hard wired
