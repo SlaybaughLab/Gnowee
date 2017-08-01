@@ -39,10 +39,6 @@ James Bevins  <br\>
 james.e.bevins@gmail.com  <br\>
 
 ## Licensing Information
-### Copyright
-<a href='licensing/COPYRIGHT'>&copy; 2017 UC Berkeley Copyright and Disclaimer Notice</a> <br/>
-
-### License
 <a href='licensing/LICENSE'>GNU GPLv3.0+ </a> <br/>
 
     This program is free software: you can redistribute it and/or modify
