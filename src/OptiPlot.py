@@ -383,7 +383,7 @@ def plot_optimization(data, label, title='', xLabel=''):
                      fontsize=17, y=1.04)
     else:
         ax.set_title(title, y=1.04)
-    ax.set_ylabel('\\textbf{Performance Metric}', fontsize=16, x=-0.04)
+    ax.set_ylabel('\\textbf{FOM}', fontsize=16, x=-0.04)
     ax.yaxis.set_major_formatter(majorFormatter)
     if all(y) > 0:
         ax.set_yscale('log')
