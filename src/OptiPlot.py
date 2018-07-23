@@ -363,7 +363,7 @@ def plot_optimization(data, label, title='', xLabel=''):
     marker = ['ko-', 'k^-', 'k+-', 'ks-', 'kd-', 'k*-', 'k>-']
 
     # Build Plot if only one set of data passed
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,9))
     ax = fig.add_subplot(1, 1, 1)
     for i in range(0, len(data), 1):
         x = data[i, :, 0]
@@ -373,31 +373,31 @@ def plot_optimization(data, label, title='', xLabel=''):
         #ax.errorbar(x, y, yerr=yerr, fmt=marker[i], label=label[i])
 
         # Add and locate legend
-        plt.legend(borderaxespad=0.75, loc=1, fontsize=12, handlelength=5,
+        plt.legend(borderaxespad=0.75, loc=1, fontsize=15, handlelength=5,
                    borderpad=0.5, labelspacing=0.75, fancybox=True,
                    framealpha=0.5)
 
     # Format plot
     if title == '':
         ax.set_title('\\textbf{Optimization Results}',
-                     fontsize=17, y=1.04)
+                     fontsize=20, y=1.04)
     else:
         ax.set_title(title, y=1.04)
-    ax.set_ylabel('\\textbf{FOM}', fontsize=16, x=-0.04)
+    ax.set_ylabel('\\textbf{FOM}', fontsize=20, x=-0.04)
     ax.yaxis.set_major_formatter(majorFormatter)
     if all(y) > 0:
         ax.set_yscale('log')
     ax.set_ylim(0.8*np.min(data[:, :, 1]), 1.2*np.max(data[:, :, 1]))
     if xLabel == '':
-        ax.set_xlabel('\\textbf{Parameter Value}', fontsize=16, y=-0.04)
+        ax.set_xlabel('\\textbf{Parameter Value}', fontsize=20, y=-0.04)
     else:
-        ax.set_xlabel(xLabel, fontsize=16, y=-0.04)    
+        ax.set_xlabel(xLabel, fontsize=20, y=-0.04)    
     #ax.set_xscale('log')
     ax.set_xlim(x[0], np.max(x))
 
-    ax.xaxis.set_tick_params(which='major', width=2, labelsize=16, length=5)
-    ax.yaxis.set_tick_params(which='major', width=2, labelsize=16, length=5)
-    ax.xaxis.set_tick_params(which='minor', width=1.5, length=4)
-    ax.yaxis.set_tick_params(which='minor', width=1.5, length=4)
+    ax.xaxis.set_tick_params(which='major', width=2, labelsize=20, length=5)
+    ax.yaxis.set_tick_params(which='major', width=2, labelsize=20, length=5)
+    ax.xaxis.set_tick_params(which='minor', width=2, length=4)
+    ax.yaxis.set_tick_params(which='minor', width=2, length=4)
 
     plt.show()
